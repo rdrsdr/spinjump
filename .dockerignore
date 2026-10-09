@@ -7,3 +7,5 @@ out/
 *.gif
 prototypes/results/
 dev.sh
+browser/node_modules
+browser/public/vendor
