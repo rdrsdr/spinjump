@@ -102,7 +102,7 @@ Atrito do par objeto–superfície = menor coeficiente entre superfície (solo/p
 
 Varredura `sweep --param launch.azimuth_deg=-60,-20,0,20,45,90 --param launch.speed_ms=2,4,6,8`
 (24 execuções, configuração intermediária: contato 0,02/1,0; refeita em escala menor com os
-parâmetros finais, ver README). Resultado notável: **a espiral é um
+parâmetros finais, ver docs/DOCUMENTACAO.md). Resultado notável: **a espiral é um
 atrator**. Em todas as combinações ocorreram 3,01–3,05 voltas antes do solo, com chegada a
 9,1–9,4 m/s. O lançamento altera a fase inicial:
 
@@ -251,7 +251,7 @@ O balanço do vão sem massa dá a perda na saída, e o amortecimento usa o alon
 
 ### Validação
 
-Ver README §11 ("Espiras deslizantes"): cabrestante dinâmico (≤ 2,2% durante o escorregamento),
+Ver docs/DOCUMENTACAO.md §11 ("Espiras deslizantes"): cabrestante dinâmico (≤ 2,2% durante o escorregamento),
 pré-tensão, puxão inclinado, involuta, energia, sensibilidade e convergência. Comparação física: o
 freio total é parecido nos dois modelos (10,6 kJ contra 9,0 kJ em 10 s de voo), mas o mecanismo muda
 (atrito real na parede em vez da fórmula da dobra), e a descida fica mais rápida (24,6 s contra

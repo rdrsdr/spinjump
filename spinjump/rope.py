@@ -1,6 +1,6 @@
 """Modelo de corda ``wrap_tether``: enrolamento explícito sobre cilindro vertical.
 
-Componentes, da âncora para o objeto (ver README, seção "Modelo da corda"):
+Componentes, da âncora para o objeto (ver docs/DOCUMENTACAO.md, seção "Modelo da corda"):
 
 1. **Hélice armazenada** (âncora → P1): raio ``rc = D/2 + d/2``, passo
    ``p = winding_pitch_factor·d``, ângulo enrolado ``u_s`` a partir da âncora.

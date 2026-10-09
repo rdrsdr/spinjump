@@ -17,7 +17,7 @@ for d in spinjump configs tests tools prototypes; do
   tar -C "$ROOT" --exclude='__pycache__' --exclude='*.pyc' --exclude='prototypes/results' -cf - "$d" | tar -C "$DEST" -xf -
 done
 cp "$ROOT/requirements.txt" "$ROOT/pytest.ini" "$ROOT/NOTES.md" "$ROOT/.dockerignore" "$DEST/"
-cp "$ROOT/README.md" "$DEST/DOCUMENTACAO.md"
+sed "s#](../NOTES.md)#](NOTES.md)#g" "$ROOT/docs/DOCUMENTACAO.md" > "$DEST/DOCUMENTACAO.md"
 cp "$HERE/README.md" "$DEST/README.md"
 
 # Dockerfile do projeto + ajustes do Space: porta 7860 (app_port), 2 vCPUs (1 thread de render),
