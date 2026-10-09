@@ -11,6 +11,7 @@ ENV PIP_NO_CACHE_DIR=1 \
     LP_NUM_THREADS=2 \
     MPLBACKEND=Agg \
     MPLCONFIGDIR=/tmp/matplotlib \
+    NUMBA_CACHE_DIR=/tmp/numba_cache \
     SPINJUMP_OUT=/app/out \
     PORT=8000
 
@@ -26,8 +27,10 @@ RUN pip install -r requirements.txt
 
 RUN useradd --create-home --uid 1000 sim
 COPY --chown=sim:sim . /app
-RUN mkdir -p /app/out && chown -R sim:sim /app/out
+RUN mkdir -p /app/out /tmp/numba_cache && chown -R sim:sim /app/out /tmp/numba_cache && chmod 1777 /tmp/numba_cache
 USER sim
+# pré-compila o kernel da corda encostada (numba); o cache vale para qualquer UID do contêiner
+RUN python -c "from spinjump._chain_kernel import warmup; warmup()" && chmod -R a+rwX /tmp/numba_cache
 
 VOLUME ["/app/out"]
 EXPOSE 8000

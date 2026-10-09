@@ -55,11 +55,13 @@
         <text x="30" y="200" class="d-label">spiral descent</text>
       </svg>
     </figure>
-    <p>The rope starts wound in a tight helix near the top of the chimney (50 m tall, 5 m wide by default). The
-      dummy is launched from the edge. As it swings around the chimney the rope peels off the coils, so the free
-      part gets longer and the dummy descends in a widening spiral. The model computes rope tension, slack,
-      wrapping, air drag and wind, contact with the wall and the ground, and reports impacts, how far the dummy
-      slid, and where it came to rest. You can change heights, rope, launch, wind and ground and watch the result
+    <p>The rope starts wound in a tight helix near the top of the chimney (50 m tall, 5 m wide by default),
+      unwinding from the bottom coil. The dummy is launched from the edge. As it swings around the chimney the rope
+      peels off the coils, so the free part gets longer and the dummy descends in a widening spiral. The rope lying
+      on the wall is simulated with wall friction: when the pull is steep, the coils slide down the chimney and that
+      friction is what brakes the descent. The model computes rope tension, slack, wrapping, coil sliding, air drag
+      and wind, contact with the wall and the ground, and reports impacts, how far the dummy slid, and where it
+      came to rest. You can change heights, rope, launch, wind and ground and watch the result
       live — each visitor runs their own simulation on the server.</p>
   </section>
 
@@ -88,8 +90,7 @@
       <li><b>Falling from height.</b> A free fall from 50 m reaches about 31 m/s (≈ 113 km/h) at the ground. Any
         failure of the rope, its anchor, a knot or a harness leads to exactly that.</li>
       <li><b>High-speed ground impact even when "everything works".</b> In the model's default run the dummy still
-        reaches the ground at about 9 m/s (≈ 33 km/h), mostly sideways, then tumbles and slides for more than
-        ten metres.</li>
+        reaches the ground at about 10 m/s (≈ 36 km/h), mostly sideways, then tumbles and slides for metres.</li>
       <li><b>Hitting the structure.</b> Many launch settings swing the body into the chimney wall.</li>
       <li><b>Rope, anchor and attachment loads.</b> Swinging and jerks multiply forces far beyond body weight;
         friction can cut or melt rope.</li>
@@ -106,9 +107,12 @@
     <h2>Why the numbers are not safety numbers</h2>
     <ul>
       <li>The dummy is a single rigid body; real bodies, tissue and injuries are not modelled.</li>
-      <li>The rope model is simplified: for example, it assumes the coils never slide down the chimney, and an
-        energy loss at the point where the rope leaves the coils strongly slows the descent. A real rope could
-        behave very differently.</li>
+      <li>The rope model is simplified: the rope on the wall is a chain of points sliding on the surface with
+        simple Coulomb friction, rope coils only push on each other vertically, and the free part is a straight
+        elastic segment. Friction between the rope and the wall strongly controls how fast the dummy descends, and
+        a real rope could behave very differently.</li>
+      <li>How far the dummy slides after landing is chaotic in this model: tiny changes in the launch change it by
+        tens of percent.</li>
       <li>Impact peaks (shown in g) depend on numerical contact settings. The OK / WARNING / DAMAGE labels compare
         them with an <b>illustrative</b> threshold — they are not injury criteria.</li>
       <li>The model has not been validated against real tests of this activity.</li>

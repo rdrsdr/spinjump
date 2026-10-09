@@ -52,6 +52,13 @@ class Rope(_Strict):
     winding_pitch_factor: float = Field(ge=1.0, le=100.0)
     winding_handedness: Literal["ccw", "cw"]
     anchor_below_top_m: float = Field(gt=0.0)
+    helix_vertical: Literal["down", "up"] = "down"
+    coil_sliding: bool = True
+    winding_pretension_N: float = Field(default=20.0, ge=0.0, le=5000.0)
+    coil_window_turns: float = Field(default=2.0, ge=0.25, le=50.0)
+    coil_iterations: int = Field(default=3, ge=1, le=50)
+    coil_update_every_steps: int = Field(default=1, ge=1, le=100)
+    coil_mass_scale: float = Field(default=50.0, ge=1.0, le=10000.0)
     self_collision: bool = False
     breaking_load_N: float = Field(gt=0.0)
     load_warn_fraction: float = Field(gt=0.0, le=1.0)
@@ -335,6 +342,10 @@ def resolve(cfg: SimConfig) -> tuple[SimConfig, dict]:
         "rope.self_collision": t("inap.self"),
         "rope.ground_friction": t("inap.ground"),
     }
+    if not c.rope.coil_sliding:
+        for k in ("winding_pretension_N", "coil_window_turns", "coil_iterations", "coil_update_every_steps",
+                  "coil_mass_scale"):
+            notes["inapplicable_params"][f"rope.{k}"] = t("inap.locked")
     return c, notes
 
 

@@ -9,6 +9,9 @@ const FIELDS = [
     ["tower.wall_friction", "Object–wall friction", "", 0, 1.5, 0.05],
   ]],
   ["Rope (wrap_tether)", [
+    ["rope.coil_sliding", "Coils can slide on the wall (more realistic, slower)", "", null, null, null, "bool"],
+    ["rope.helix_vertical", "Coils unwind from", "", null, null, null, ["down", "up"]],
+    ["rope.winding_pretension_N", "Winding pretension", "N", 0, 500, 1],
     ["rope.length_auto", "Automatic length", "", null, null, null, "bool"],
     ["rope.length_m", "Length L", "m", 5, 400, 0.5],
     ["rope.axial_EA_N", "Axial stiffness EA", "N", 1000, 1e6, 1000],
@@ -88,7 +91,8 @@ function buildForm(cfg) {
       let input;
       if (Array.isArray(kind)) {
         input = document.createElement("select");
-        kind.forEach((o) => { const op = document.createElement("option"); op.value = o; op.textContent = o || "(none)"; input.appendChild(op); });
+        const LABELS = { down: "bottom (helix goes down)", up: "top (helix goes up)" };
+        kind.forEach((o) => { const op = document.createElement("option"); op.value = o; op.textContent = LABELS[o] || o || "(none)"; input.appendChild(op); });
       } else if (kind === "bool") {
         input = document.createElement("input"); input.type = "checkbox";
       } else {
@@ -187,6 +191,7 @@ const TELE = [
   ["speed", "speed", "m/s", 2], ["height", "CoM height", "m", 2], ["wall_dist", "distance to wall", "m", 2],
   ["object_turns", "object turns", "", 2], ["stored_turns", "turns on helix", "", 2],
   ["wound_turns", "turns in contact", "", 2], ["wound_len", "wound rope", "m", 1],
+  ["coil_drop", "coil slide on wall", "m", 2],
   ["free_len", "free span", "m", 1], ["elongation", "elongation", "m", 3], ["slack", "slack", "m", 3],
   ["tension", "tension at object", "N", 0], ["tension_anchor", "tension at anchor", "N", 0],
   ["tension_max", "max tension", "N", 0], ["ground_fn", "ground normal force", "N", 0], ["tower_fn", "tower normal force", "N", 0],
@@ -289,13 +294,13 @@ function connect() {
       hist.t = []; hist.z = []; hist.T = [];
       $("result").hidden = true;
       setState("running");
-      $("pitch-note").textContent = `(pitch magnified ×${m.helix_visual_pitch_scale}, visual only)`;
+      $("pitch-note").textContent = m.helix_visual_pitch_scale > 1 ? `(pitch magnified ×${m.helix_visual_pitch_scale}, visual only)` : "(true scale; coils can slide)";
       msg(`simulation started: L = ${m.layout.rope_length_m} m (${m.layout.rope_length_source}); initial helix ${m.layout.turns0} turns`);
       (m.warnings || []).forEach((w) => msg(w, "warnmsg"));
       $("playback").value = m.factor; $("pb-out").textContent = `${Number(m.factor).toFixed(1)}×`;
       document.querySelectorAll(".cam").forEach((b) => b.classList.toggle("active", b.dataset.cam === m.camera));
     } else if (m.type === "status") {
-      if (m.helix_visual_pitch_scale) $("pitch-note").textContent = `(pitch magnified ×${m.helix_visual_pitch_scale}, visual only)`;
+      if (m.helix_visual_pitch_scale) $("pitch-note").textContent = m.helix_visual_pitch_scale > 1 ? `(pitch magnified ×${m.helix_visual_pitch_scale}, visual only)` : "(true scale; coils can slide)";
       if (m.status === "attached") { setState(m.finished ? "finished" : (m.paused ? "paused" : "running")); msg("reconnected to your simulation"); }
       if (m.status === "paused") setState("paused");
       if (m.status === "running") setState("running");

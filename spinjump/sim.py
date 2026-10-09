@@ -18,6 +18,7 @@ from .config import G, SimConfig, launch_impulse, resolve
 from .impacts import ImpactTracker
 from .model import Built, build, object_extent_radius, object_geoms
 from .rope import RopeParams, WrapTether
+from .surface_rope import SurfaceRope
 
 from .wind import Wind
 from .i18n import t as _t
@@ -29,6 +30,7 @@ TELEMETRY_FIELDS = [
     "rest_len", "path_len", "elongation", "slack", "tension", "tension_anchor", "kink_deg",
     "Dx", "Dy", "Dz", "P1z", "ground_fn", "tower_fn", "wind_x", "wind_y",
     "ke", "pe", "rope_pe", "e_total", "w_drag", "w_rope_damp", "w_peel", "w_wind_in", "phase",
+    "coil_drop", "w_coil_fric",
 ]
 PHASES = {0: "launch", 1: "airborne", 2: "ground", 3: "rest"}   # códigos; rótulos via i18n
 OUTCOMES = ("AT_REST_CLEAN", "HIT_STRUCTURE", "REWOUND", "TIMEOUT", "NUMERICAL_FAILURE")
@@ -88,6 +90,9 @@ class Tracker:
     w_rope_dist: float = 0.0     # trabalho das cargas distribuídas da corda sobre o objeto
     w_rope_damp: float = 0.0     # energia dissipada no amortecimento axial
     w_peel: float = 0.0          # energia dissipada na dobra ao descascar a hélice
+    w_coil_fric: float = 0.0     # energia dissipada por atrito corda–parede (espiras deslizantes)
+    w_chain_out: float = 0.0     # energia que saiu da corda encostada por transferência de material
+    coil_drop_max: float = 0.0   # maior deslocamento vertical de um trecho encostado (m)
     w_launch: float = 0.0        # trabalho da força de lançamento (modo com duração)
     e_flight_residual_max: float = 0.0
 
@@ -116,12 +121,19 @@ class Simulation:
             EA=float(c.rope.axial_EA_N), zeta=c.rope.axial_damping_ratio,
             lin_density=c.rope.linear_density_kg_m, mu_wall=c.rope.wall_friction,
             cd_normal=c.rope.wind_drag_Cd_normal, cd_tangent=c.rope.wind_drag_Cd_tangent,
-            element_length=c.rope.element_length_m, m_eff=c.object.mass_kg, tower_height=H)
-        self.rope = WrapTether(self.rp)
+            element_length=c.rope.element_length_m, m_eff=c.object.mass_kg, tower_height=H,
+            vertical=1 if c.rope.helix_vertical == "up" else -1)
+        if c.rope.coil_sliding:
+            self.rope = SurfaceRope(self.rp, self.dt, c.rope.winding_pretension_N, c.rope.coil_window_turns,
+                                    c.rope.coil_iterations, c.rope.coil_update_every_steps,
+                                    c.rope.coil_mass_scale)
+        else:
+            self.rope = WrapTether(self.rp)
         rho_A = R + c.object.start_clearance_m + self.extent
         self.layout = self.rope.initial_layout(rho_A, 0.0)
         A0 = self.layout["A0"]
-        if self.layout["helix_height"] + 1e-9 > c.rope.anchor_below_top_m:
+        room = c.rope.anchor_below_top_m if c.rope.helix_vertical == "up" else self.rp.z_anchor
+        if self.layout["helix_height"] + 1e-9 > room:
             raise ValueError(_t("err.helix_too_tall", turns=self.layout["turns0"], height=self.layout["helix_height"]))
         self.warnings: list[str] = []
         # alcance do solo com a corda totalmente desenrolada (geometria real)
@@ -196,7 +208,8 @@ class Simulation:
         self.rope.update(A, self._site_velocity(), self.wind.at_many, self.air_rho, G)
 
     def _energy(self) -> float:
-        return float(self.d.energy[0] + self.d.energy[1] + self.rope.s.elastic_energy)
+        rs = self.rope.s
+        return float(self.d.energy[0] + self.d.energy[1] + rs.elastic_energy + rs.chain_energy)
 
     def _world_segments(self):
         bid = self.b.body_id
@@ -253,6 +266,8 @@ class Simulation:
         tr.w_rope_dist += (dl[0] * vA[0] + dl[1] * vA[1] + dl[2] * vA[2]) * dt
         tr.w_rope_damp += rs.p_damp * dt
         tr.w_peel += rs.p_peel * dt
+        tr.w_coil_fric += rs.e_fric
+        tr.w_chain_out += rs.e_massflux
         if self.air_rho > 0.0 and self._cda > 0.0:
             w = self.wind.at(com[2])
             vrx, vry, vrz = v_com[0] - w[0], v_com[1] - w[1], v_com[2] - w[2]
@@ -319,7 +334,9 @@ class Simulation:
             tr.above_top_time += dt
         # risco de escorregamento das espiras: componente vertical da tração em P1 vs.
         # capacidade de atrito da hélice armazenada T·(1 - exp(-μ u_s))
-        if rs.tension > 0.0 and rs.u_s > 0.0 and abs(rs.psi_g) < 1e-9:
+        if rs.coil_drop > tr.coil_drop_max:
+            tr.coil_drop_max = rs.coil_drop
+        if self.rope.model_name == "locked" and rs.tension > 0.0 and rs.u_s > 0.0 and abs(rs.psi_g) < 1e-9:
             cap = 1.0 - math.exp(-self.rp.mu_wall * rs.u_s)
             ratio = abs(rs.e[2]) / max(cap, 1e-9)
             tr.coil_slip_ratio_max = max(tr.coil_slip_ratio_max, ratio)
@@ -339,7 +356,7 @@ class Simulation:
             # resíduo do balanço de energia em voo livre de contato
             e_obj = float(self.d.energy[0] + self.d.energy[1])
             pred = (tr.energy0 + tr.w_drag + tr.w_rope_dist + tr.w_launch - tr.w_rope_damp - tr.w_peel
-                    - rs.elastic_energy)
+                    - tr.w_coil_fric - tr.w_chain_out - rs.elastic_energy - rs.chain_energy)
             tr.e_flight_residual_max = max(tr.e_flight_residual_max, abs(e_obj - pred))
         if t_on and tr.first_tower_t is None:
             tr.first_tower_t = t
@@ -399,8 +416,10 @@ class Simulation:
                rs.l_free, rs.l_rest, rs.l_geom, max(rs.delta, 0.0), max(-rs.delta, 0.0),
                rs.tension, rs.tension_anchor, rs.kink_deg, rs.D[0], rs.D[1], rs.D[2], rs.P1[2],
                self.impacts.current_fn["ground"], self.impacts.current_fn["tower"], w[0], w[1],
-               ke, pe, rs.elastic_energy, ke + pe + rs.elastic_energy, tr.w_drag, tr.w_rope_damp, tr.w_peel,
-               tr.w_wind_in, self._phase)
+               ke, pe, rs.elastic_energy,
+               ke + pe + rs.elastic_energy + rs.chain_energy + tr.w_chain_out,   # total contábil
+               tr.w_drag, tr.w_rope_damp, tr.w_peel,
+               tr.w_wind_in, self._phase, rs.coil_drop, tr.w_coil_fric)
         self.samples.append(row)
 
     # ------------------------------------------------------------------- API
@@ -455,6 +474,7 @@ class Simulation:
             rest_len=round(rs.l_rest, 3), elongation=round(max(rs.delta, 0.0), 4),
             slack=round(max(-rs.delta, 0.0), 4), slack_flag=bool(rs.slack),
             tension=round(rs.tension, 1), tension_anchor=round(rs.tension_anchor, 1),
+            coil_drop=round(rs.coil_drop, 4), coil_model=self.rope.model_name,
             tension_max=round(tr.t_max, 1), phase=_t(f"phase.{self._phase}"), phase_code=PHASES[self._phase],
             ground_fn=round(self.impacts.current_fn["ground"], 1),
             tower_fn=round(self.impacts.current_fn["tower"], 1),

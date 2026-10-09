@@ -29,6 +29,7 @@ class SessionCore:
         c = self.sim.cfg
         self.cfg = c
         self.factor = c.ui.playback_factor
+        self.pitch_scale = 1.0 if c.rope.coil_sliding else c.ui.helix_visual_pitch_scale
         self.render_hz = c.ui.render_hz
         self.camera = CameraState(mode=c.ui.camera, distance=max(60.0, c.tower.height_m * 1.9),
                                   lookat=[0.0, 0.0, c.tower.height_m * 0.45])
@@ -56,7 +57,7 @@ class SessionCore:
             "turns0": round(s.layout["turns0"], 3), "wound0_m": round(s.layout["wound0"], 2),
             "free0_m": round(s.layout["free0"], 3), "rope_length_m": float(self.cfg.rope.length_m),
             "rope_length_source": s.notes.get("rope_length_source")},
-            "warnings": s.warnings, "helix_visual_pitch_scale": self.cfg.ui.helix_visual_pitch_scale,
+            "warnings": s.warnings, "helix_visual_pitch_scale": self.pitch_scale,
             "factor": self.factor, "render_hz": self.render_hz, "camera": self.camera.mode}
 
     def start(self):
@@ -71,7 +72,7 @@ class SessionCore:
         tel = sim.snapshot()
         tel.update(wall_s=round(self.wall_run, 3), rate=round(self.rate, 3), factor=self.factor,
                    paused=self.paused, render_ms=round(self.render_ms, 1))
-        fs = frame_state(sim, self.cfg.ui.helix_visual_pitch_scale)
+        fs = frame_state(sim, self.pitch_scale)
         with self.lock:
             self.latest = (fs, tel)
         self.new_frame.set()

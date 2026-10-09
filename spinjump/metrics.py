@@ -75,7 +75,8 @@ def summarize(sim: Simulation, name: str | None = None) -> dict:
     est = auto_rope_length(c.tower.height_m, sim.launch_J / sim.mass)
     energy_final = float(final[F["e_total"]])
     e0 = tr.energy0
-    w_known = tr.w_drag + tr.w_rope_dist + tr.w_launch - tr.w_rope_damp - tr.w_peel
+    w_known = (tr.w_drag + tr.w_rope_dist + tr.w_launch - tr.w_rope_damp - tr.w_peel - tr.w_coil_fric
+               - tr.w_chain_out)
     contact_diss = e0 + w_known - energy_final
     reach = ground_reach_check(sim)
     summary = {
@@ -162,6 +163,10 @@ def summarize(sim: Simulation, name: str | None = None) -> dict:
         },
         "rope": {
             "model": c.rope.model,
+            "coil_model": sim.rope.model_name,
+            "helix_vertical": c.rope.helix_vertical,
+            "coil_drop_max_m": _r(tr.coil_drop_max),
+            "coil_friction_J": _r(tr.w_coil_fric),
             "length_m": float(c.rope.length_m),
             "length_source": sim.notes.get("rope_length_source", ""),
             "length_estimate": {k: (_r(v) if isinstance(v, float) else v) for k, v in est.items()},
@@ -179,7 +184,7 @@ def summarize(sim: Simulation, name: str | None = None) -> dict:
             "slack_episodes": tr.slack_episodes,
             "slack_max_m": _r(tr.slack_max),
             "rewind_max_turns": _r(tr.rewind_max_turns),
-            "coil_slip_ratio_max": _r(tr.coil_slip_ratio_max),
+            "coil_slip_ratio_max": _r(tr.coil_slip_ratio_max) if sim.rope.model_name == "locked" else None,
             "coil_slip_risk_time_s": _r(tr.coil_slip_risk_time),
             "coil_slip_note": t("note.coil_slip"),
         },
@@ -199,6 +204,8 @@ def summarize(sim: Simulation, name: str | None = None) -> dict:
             "rope_distributed_work_J": _r(tr.w_rope_dist),
             "rope_axial_damping_J": _r(tr.w_rope_damp),
             "rope_peel_kink_J": _r(tr.w_peel),
+            "coil_wall_friction_J": _r(tr.w_coil_fric),
+            "coil_mass_transfer_J": _r(tr.w_chain_out),
             "launch_force_work_J": _r(tr.w_launch),
             "contact_and_residual_J": _r(contact_diss),
             "flight_balance_residual_max_J": _r(tr.e_flight_residual_max),

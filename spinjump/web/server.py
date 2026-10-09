@@ -114,7 +114,7 @@ class SessionProxy:
         self.closed = False
         self.paused = False
         self.factor = cfg.ui.playback_factor
-        self.helix_scale = cfg.ui.helix_visual_pitch_scale
+        self.helix_scale = 1.0 if cfg.rope.coil_sliding else cfg.ui.helix_visual_pitch_scale
         self.result: dict | None = None
         self.started: dict | None = None
         self.last_tel: dict | None = None

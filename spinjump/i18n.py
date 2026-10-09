@@ -129,6 +129,8 @@ TEXTS: dict[str, dict[str, str]] = {
                           "contato corda-solo não é modelado",
                     "en": "the free span leaves the helix near the top and only reaches the ground at the "
                           "object end; rope–ground contact is not modelled"},
+    "inap.locked": {"pt": "só se aplica com rope.coil_sliding: true (espiras travadas não deslizam)",
+                    "en": "only applies with rope.coil_sliding: true (locked coils do not slide)"},
     # ------------------------------------------------------------- métricas/notas
     "note.reach_short": {"pt": "comprimento insuficiente: o objeto fica suspenso mesmo com a corda totalmente "
                                "desenrolada",
@@ -244,6 +246,9 @@ TEXTS: dict[str, dict[str, str]] = {
     "e.rope_axial_damping_J": {"pt": "dissipado no amortecimento axial", "en": "dissipated by axial damping"},
     "e.rope_peel_kink_J": {"pt": "dissipado na dobra de saída e na inserção de material",
                            "en": "dissipated at the departure kink and material insertion"},
+    "e.coil_wall_friction_J": {"pt": "dissipado por atrito das espiras na parede", "en": "dissipated by coil–wall friction"},
+    "e.coil_mass_transfer_J": {"pt": "energia levada pelo material que passou da parede ao vão (contábil)",
+                               "en": "energy carried by material moving from the wall to the span (bookkeeping)"},
     "e.launch_force_work_J": {"pt": "trabalho da força de lançamento (com duração)",
                               "en": "launch force work (with duration)"},
     "e.contact_and_residual_J": {"pt": "contato/atrito (resíduo do balanço)",

@@ -24,7 +24,14 @@ rope:
   wind_drag_Cd_tangent: 0.05
   winding_pitch_factor: 1.05  # passo da hélice = fator × diâmetro da corda
   winding_handedness: ccw     # sentido da hélice partindo da âncora, visto de cima
-  anchor_below_top_m: 0.3     # âncora logo abaixo do topo; a hélice sobe a partir dela
+  anchor_below_top_m: 0.3     # âncora logo abaixo do topo
+  helix_vertical: down        # down: hélice desce da âncora e desenrola de baixo para cima; up: sobe e sai por cima
+  coil_sliding: true          # true: espiras discretizadas na superfície, com atrito (podem escorregar); false: travadas
+  winding_pretension_N: 20.0  # pré-tensão de enrolamento (N): dá a força normal que segura as espiras
+  coil_window_turns: 1.5      # voltas móveis a partir do ponto de saída (mínimo; cresce para ln(100)/(2πμ) com atrito baixo)
+  coil_iterations: 3          # (reservado; o passo implícito resolve o sistema diretamente)
+  coil_update_every_steps: 1  # a corda encostada é integrada (passo implícito) a cada N passos físicos (1 = acoplamento mais justo, mesmo custo)
+  coil_mass_scale: 50         # escalonamento da inércia dos nós encostados (quase-estático; peso real)
   self_collision: false       # inaplicável ao wrap_tether
   breaking_load_N: 22000
   load_warn_fraction: 0.5     # alerta quando tração >= fração × carga de ruptura

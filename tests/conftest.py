@@ -32,5 +32,11 @@ def lying_sandbag(sets=(), z_clear=0.0005, with_tower=False):
 
 @pytest.fixture(scope="session")
 def default_run():
-    """Cenário demonstrativo padrão completo (reutilizado por vários testes)."""
+    """Cenário demonstrativo padrão completo (espiras deslizantes)."""
     return Simulation(load_config()).run()
+
+
+@pytest.fixture(scope="session")
+def locked_run():
+    """Mesmo cenário com espiras travadas (rope.coil_sliding: false)."""
+    return Simulation(load_config(sets=["rope.coil_sliding=false"])).run()

@@ -98,8 +98,8 @@ def write_artifacts(sim: Simulation, outdir: Path, extra: dict | None = None) ->
 # ------------------------------------------------------------------ texto
 
 ENERGY_KEYS = ("initial_J", "final_J", "drag_object_work_J", "wind_input_J", "rope_distributed_work_J",
-               "rope_axial_damping_J", "rope_peel_kink_J", "launch_force_work_J", "contact_and_residual_J",
-               "flight_balance_residual_max_J")
+               "rope_axial_damping_J", "rope_peel_kink_J", "coil_wall_friction_J", "coil_mass_transfer_J",
+               "launch_force_work_J", "contact_and_residual_J", "flight_balance_residual_max_J")
 
 
 def energy_label(k: str) -> str:

@@ -59,6 +59,8 @@ class RopeParams:
     element_length: float  # m (quadratura)
     m_eff: float           # massa do objeto (para amortecimento crítico)
     tower_height: float
+    vertical: int = 1      # +1: hélice sobe a partir da âncora (sai pela espira de cima);
+                           # -1: desce a partir da âncora (sai pela de baixo, desenrola de baixo p/ cima)
 
     @property
     def rc(self) -> float:
@@ -105,9 +107,16 @@ class RopeState:
     kink_deg: float = 0.0      # ângulo entre a espira e o trecho que sai de P1
     k: float = 0.0
     c: float = 0.0
+    # modelo de espiras deslizantes (zero no modelo travado)
+    chain_energy: float = 0.0  # cinética + potencial + elástica da corda encostada (J)
+    e_fric: float = 0.0        # energia dissipada por atrito corda–parede neste passo (J)
+    e_massflux: float = 0.0    # energia que saiu da contabilidade da cadeia neste passo (J)
+    coil_drop: float = 0.0     # maior deslocamento vertical de um trecho encostado (m)
 
 
 class WrapTether:
+    model_name = "locked"
+
     def __init__(self, p: RopeParams, phi_anchor: float = 0.0):
         self.p = p
         self.phi_a = phi_anchor
@@ -117,21 +126,21 @@ class WrapTether:
         # constantes por desempenho (o laço físico chama update a cada passo)
         self._kappa = p.kappa
         self._rc = p.rc
-        self._pz = p.pitch / TWO_PI
+        self._pz = p.vertical * p.pitch / TWO_PI
 
     # ------------------------------------------------------------ geometria
     def stored_point(self, u: float) -> np.ndarray:
         p = self.p
         phi = self.phi_a + p.handedness * u
         return np.array([p.rc * math.cos(phi), p.rc * math.sin(phi),
-                         p.z_anchor + p.pitch * u / TWO_PI])
+                         p.z_anchor + p.vertical * p.pitch * u / TWO_PI])
 
     def stored_tangent(self, u: float) -> np.ndarray:
         """dP1/du (m/rad)."""
         p = self.p
         h = p.handedness
         phi = self.phi_a + h * u
-        return np.array([-h * p.rc * math.sin(phi), h * p.rc * math.cos(phi), p.pitch / TWO_PI])
+        return np.array([-h * p.rc * math.sin(phi), h * p.rc * math.cos(phi), p.vertical * p.pitch / TWO_PI])
 
     def initial_layout(self, rho_A: float, theta_A: float) -> dict:
         """Hélice inicial com vão livre horizontal tangente até A (raio ``rho_A``)."""
@@ -306,23 +315,8 @@ class WrapTether:
             thx, thy = -regime * s1, regime * c1
             cosk = ((X * thx) * tx + (X * thy) * ty + dz * tz) / max(l_geom, 1e-9) / tn
         kink = math.degrees(math.acos(max(-1.0, min(1.0, cosk))))
-        dist = np.zeros(3)
-        if l_free > 1e-6:
-            n = max(1, int(math.ceil(l_free / p.element_length)))
-            sq, sq_sum = self._quad(n)
-            seg_mass = p.lin_density * (l_free / max(l_geom, 1e-9)) * l_rest / n
-            dist[2] -= g * seg_mass * sq_sum
-            if air_density > 0.0 and (p.cd_normal > 0 or p.cd_tangent > 0):
-                e = np.array((ex, ey, ez))
-                V = np.multiply.outer(sq, vA)
-                if wind_fn is not None:
-                    V -= wind_fn(Dz + sq * rz)
-                vte = V @ e
-                V -= np.multiply.outer(vte, e)            # componente normal
-                q = 0.5 * air_density * p.rope_d * l_free / n
-                vn_mag = np.sqrt(np.einsum("ij,ij->i", V, V))
-                dist += (sq * vn_mag) @ V * (-q * p.cd_normal)
-                dist += (float((sq * np.abs(vte)) @ vte) * (-q * math.pi * p.cd_tangent)) * e
+        free_mass = p.lin_density * (l_free / max(l_geom, 1e-9)) * l_rest
+        dist = self._dist_loads(l_free, free_mass, Dz, rz, (ex, ey, ez), vA, wind_fn, air_density, g)
         F = np.array((-T * ex, -T * ey, -T * ez))
         P1 = np.array((P1x, P1y, P1z))
         D = np.array((Dx, Dy, Dz))
@@ -344,6 +338,29 @@ class WrapTether:
         s.k, s.c = k, c
         return s
 
+    def _dist_loads(self, l_free, free_mass, Dz, rz, e3, vA, wind_fn, air_density, g) -> np.ndarray:
+        """Peso e arrasto distribuídos do vão livre (quadratura com ``element_length``), parcela
+        transmitida ao objeto pela regra da alavanca (material parado em D, vão girando em D)."""
+        p = self.p
+        dist = np.zeros(3)
+        if l_free <= 1e-6:
+            return dist
+        n = max(1, int(math.ceil(l_free / p.element_length)))
+        sq, sq_sum = self._quad(n)
+        dist[2] -= g * (free_mass / n) * sq_sum
+        if air_density > 0.0 and (p.cd_normal > 0 or p.cd_tangent > 0):
+            e = np.array(e3)
+            V = np.multiply.outer(sq, vA)
+            if wind_fn is not None:
+                V -= wind_fn(Dz + sq * rz)
+            vte = V @ e
+            V -= np.multiply.outer(vte, e)            # componente normal
+            q = 0.5 * air_density * p.rope_d * l_free / n
+            vn_mag = np.sqrt(np.einsum("ij,ij->i", V, V))
+            dist += (sq * vn_mag) @ V * (-q * p.cd_normal)
+            dist += (float((sq * np.abs(vte)) @ vte) * (-q * math.pi * p.cd_tangent)) * e
+        return dist
+
     @property
     def wound_turns(self) -> float:
         """Voltas em contato com a torre (armazenadas + geodésicas)."""
@@ -360,8 +377,8 @@ class WrapTether:
         n = max(2, int(math.ceil(u_end / TWO_PI * pts_per_turn)) + 1)
         u = np.linspace(0.0, u_end, n)
         phi = self.phi_a + p.handedness * u
-        z_end = p.z_anchor + p.pitch * u_end / TWO_PI
-        z = z_end - (u_end - u) * p.pitch * pitch_scale / TWO_PI
+        z_end = p.z_anchor + p.vertical * p.pitch * u_end / TWO_PI
+        z = z_end - p.vertical * (u_end - u) * p.pitch * pitch_scale / TWO_PI
         return np.stack([p.rc * np.cos(phi), p.rc * np.sin(phi), z], axis=1)
 
     def geodesic_polyline(self, pts_per_turn: int = 72) -> np.ndarray:
