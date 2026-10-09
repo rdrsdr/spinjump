@@ -297,6 +297,11 @@ Hugging Face profile (2 vCPUs): 1 session runs at 1.0× real time, 2 sessions at
 6. UI fixes: Start works again after a run finishes; telemetry label "distance to floor (m)";
    scrollable list of all impact events; strongest-impact card restored.
 7. This README (handoff); the previous Portuguese README moved to `docs/DOCUMENTACAO.md`.
+8. Publish on GitHub under `rdrsdr` (history rewritten to the noreply identity; public repo
+   https://github.com/rdrsdr/spinjump) and document the collision settings (`shithappens.md`).
+9. Hugging Face Docker Spaces became paid → evaluate running 100% in the browser: version the
+   server app (tag `v2-python-server`) and build a prototype on branch `feature/browser-prototype`
+   (see §12).
 
 ## 11. Known limitations and possible next steps
 
@@ -310,3 +315,17 @@ Possible next steps (none requested yet):
 - make post-landing metrics more robust (ensemble statistics instead of a single run);
 - articulated mannequin for landing behaviour;
 - test `compose.gpu.yaml` (EGL) on a GPU host.
+
+## 12. Browser prototype (`browser/`, branch `feature/browser-prototype`)
+
+Goal: run SpinJump entirely in the visitor's browser as static files (GitHub Pages), using the
+official MuJoCo WebAssembly build (`@mujoco/mujoco` 3.15.0) plus the rope model, wind, drag and
+impacts ported to JavaScript (`browser/public/src/`). Scenarios (resolved config + MJCF) are still
+exported by Python (`browser/tools/export_scenarios.py`). Details in `browser/README.md`.
+
+- Agreement with Python (deterministic wind): locked coils identical (8e-9 m); sliding coils within
+  1.2 mm during flight with the same metrics; rewind case hits the tower in both.
+- Speed: Node 15.8 µs/step (locked) and 55.6 µs/step (sliding) vs Python 53/117; headless Chromium
+  physics-only 32/128 µs/step (0.13/0.51 CPU s per simulated s). Real-phone measurement pending.
+- Not done yet: parameter form, config/MJCF generation in JS, intro/safety page, reports, GitHub
+  Pages deploy.

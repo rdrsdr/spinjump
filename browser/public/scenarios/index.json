@@ -1,0 +1,22 @@
+[
+ {
+  "name": "default",
+  "description": "Default demo: sliding coils, unwinding from the bottom coil, 4 m/s tangential launch."
+ },
+ {
+  "name": "locked",
+  "description": "Default demo with locked coils (faster rope model)."
+ },
+ {
+  "name": "rewind",
+  "description": "Launch toward the winding direction (azimuth -60\u00b0, 6 m/s): rewinds and hits the tower."
+ },
+ {
+  "name": "away",
+  "description": "Launch straight away from the chimney: swings back into the wall."
+ },
+ {
+  "name": "strong_wind",
+  "description": "Strong wind (10 m/s) with gusts and a vertical profile."
+ }
+]

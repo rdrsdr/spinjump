@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpinJump in the browser</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+  { "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">SpinJump <span class="tag">browser prototype</span></div>
+  <p class="notice" role="note"><b>Only a simulation.</b> Qualitative and exploratory results from a simplified
+    model — not a safety validation, not instructions. The real activity can kill or seriously injure; never attempt
+    it.</p>
+</header>
+<main class="layout">
+  <section class="stage">
+    <canvas id="view" aria-label="3D view of the simulation"></canvas>
+    <div class="loading" id="loading">Loading physics engine…</div>
+  </section>
+  <aside class="panel">
+    <div class="controls">
+      <label>Scenario <select id="scenario"></select></label>
+      <p class="desc" id="desc"></p>
+      <div class="row">
+        <button id="start" class="primary" disabled>Start</button>
+        <button id="pause" disabled>Pause</button>
+        <label class="speed">Speed <select id="speed">
+          <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+          <option value="4">4×</option><option value="0">max</option></select></label>
+      </div>
+      <label class="check"><input type="checkbox" id="follow" checked> Camera follows the dummy</label>
+    </div>
+    <div class="box">
+      <h2>Telemetry</h2>
+      <dl class="tele" id="tele"></dl>
+    </div>
+    <div class="box">
+      <h2>Performance <span class="muted">(your device)</span></h2>
+      <dl class="tele" id="perf"></dl>
+    </div>
+    <div class="box">
+      <h2>Impacts <span id="ev-count" class="muted"></span></h2>
+      <ol class="events" id="events"></ol>
+    </div>
+    <div class="box result" id="result" hidden></div>
+  </aside>
+</main>
+<footer class="foot">Physics: MuJoCo (WebAssembly) running in your browser; rope model ported from the Python
+  version. Source: <a href="https://github.com/rdrsdr/spinjump" target="_blank" rel="noopener">github.com/rdrsdr/spinjump</a></footer>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

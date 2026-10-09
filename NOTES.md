@@ -274,3 +274,14 @@ deslizantes e 53 µs/passo com travadas. Antes, eram 214 e 83 µs/passo em NumPy
 compilação é gerado na construção da imagem (`/tmp/numba_cache`, legível e gravável por qualquer
 UID). As medições com várias sessões simultâneas variaram bastante neste host WSL2 (por exemplo,
 0,47× e 0,73× para 2 e 3 sessões sem limite de CPU numa rodada).
+
+## 12. Protótipo no navegador (2026-10-09)
+
+Motivo: Spaces Docker do Hugging Face passaram a ser pagos. Teste de viabilidade de rodar tudo no
+navegador com o MuJoCo oficial em WebAssembly (`@mujoco/mujoco` 3.15.0). Porte em JavaScript do laço
+de `sim.py`, de `WrapTether`, `SurfaceRope`, do kernel numba e de `impacts.py`
+(`browser/public/src/`). Concordância com o Python: espiras travadas idênticas (8·10⁻⁹ m);
+deslizantes 1,2 mm em voo com as mesmas métricas. Desempenho: Node 15,8/55,6 µs por passo
+(travadas/deslizantes), Chromium headless só física 32/128 µs. A limitação de CPU por CDP não atinge
+Web Workers. Detalhes e números em `browser/README.md`; código da versão servidor preservado na tag
+`v2-python-server`.
