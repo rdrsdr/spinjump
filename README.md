@@ -254,13 +254,16 @@ Hugging Face profile (2 vCPUs): 1 session runs at 1.0× real time, 2 sessions at
 ## 8. Deployment
 
 - **Local / LAN**: `make up`. Quick public demo: `cloudflared tunnel --url http://localhost:8000`.
-- **Hugging Face Spaces (free, Docker SDK)**: create a Docker Space, clone it, then
+- **Hugging Face Spaces (Docker SDK — requires the paid PRO plan since mid-2026; free accounts only
+  get static and Gradio/ZeroGPU Spaces)**: create a Docker Space, clone it, then
   `make hf-space SPACE_DIR=/path/to/clone`, `cd` there, `git add -A && git commit && git push`.
   The script copies code, configs, tests, tools, prototypes (without results), the Portuguese doc
   as `DOCUMENTACAO.md`, the Space card from `deploy/huggingface/README.md`, and appends to the
   Dockerfile: `PORT=7860 LP_NUM_THREADS=1 SPINJUMP_KEEP_RUNS=30 SPINJUMP_MAX_SESSIONS=2
   SPINJUMP_MAX_SIM_TIME_S=180` (and drops `VOLUME`). Reports there are ephemeral.
-- **Oracle Cloud Always Free** (ARM VM) was suggested as the always-on alternative; not set up.
+- **Oracle Cloud Always Free** (ARM VM) is the free always-on alternative; not set up.
+- **Static, in-browser version** (GitHub Pages, MuJoCo WebAssembly): being prototyped on branch
+  `feature/browser-prototype` (see `browser/`).
 
 ## 9. Conventions and gotchas
 

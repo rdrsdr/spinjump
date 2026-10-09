@@ -312,7 +312,11 @@ solo.
   1920×1080, 1024×768 e 390×844 (`tools/ui_layout.py`): nenhum elemento sobre a cena, sem rolagem
   horizontal.
 
-### Publicar no Hugging Face Spaces (gratuito)
+### Publicar no Hugging Face Spaces
+
+> Desde meados de 2026 o Hugging Face exige plano pago (PRO, US$ 9/mês) para Spaces Docker; na
+> conta gratuita só há Spaces estáticos e Gradio/ZeroGPU. Alternativas gratuitas: túnel Cloudflare a
+> partir do próprio PC (`cloudflared tunnel --url http://localhost:8000`) ou VM Oracle Cloud Always Free.
 
 `deploy/huggingface/make_space.sh <pasta>` (ou `make hf-space SPACE_DIR=<pasta>`) monta o
 repositório de um Space com SDK Docker. Ele copia código, configs, testes e documentação e usa o
@@ -321,7 +325,7 @@ cartão `deploy/huggingface/README.md` (em inglês; cabeçalho `title: SpinJump`
 `SPINJUMP_MAX_SESSIONS=2`, `SPINJUMP_MAX_SIM_TIME_S=180` e `SPINJUMP_KEEP_RUNS=30` (só as 30
 execuções mais recentes ficam em disco), sem `VOLUME`.
 
-1. Em huggingface.co: *New Space* → SDK **Docker** (template em branco), hardware **CPU basic** (grátis).
+1. Em huggingface.co: *New Space* → SDK **Docker** (template em branco), hardware **CPU basic** (requer plano PRO).
 2. Crie um token de acesso com permissão de escrita (*Settings → Access Tokens*).
 3. `git clone https://huggingface.co/spaces/<usuario>/spinjump ../spinjump-space`
 4. `deploy/huggingface/make_space.sh ../spinjump-space`
@@ -329,7 +333,7 @@ execuções mais recentes ficam em disco), sem `VOLUME`.
    (usuário = seu login no HF, senha = o token). A construção leva alguns minutos e o app fica em
    `https://<usuario>-<space>.hf.space`.
 
-Para atualizar, repita os passos 4 e 5. Testado localmente no perfil do plano gratuito (porta 7860,
+Para atualizar, repita os passos 4 e 5. Testado localmente no perfil do CPU basic (porta 7860,
 UID 1000, sem volume, `--cpus 2`): interface a 14,8 quadros/s, 1× = 1,00 e 2× = 2,00 com um visitante;
 com dois visitantes simultâneos, ~0,95× cada (com três cairia para ~0,5×, por isso o limite de 2).
 
