@@ -77,3 +77,13 @@ def test_6_convergence_sliding(default_run):
     assert cv["rel_change"]["arrival_speed_ms"] <= TOLERANCE
     assert cv["rel_change"]["tension_max_N"] <= TOLERANCE
     assert cv["reliable"] == (cv["max_rel_change"] <= TOLERANCE)
+
+
+@pytest.mark.parametrize("model", ["sliding", "locked"])
+def test_summary_is_plain_json(model, default_run, locked_run):
+    """O resumo (enviado à interface ao fim) serializa com json puro: nada de tipos NumPy."""
+    import json
+    run = default_run if model == "sliding" else locked_run
+    s = summarize(run)
+    json.dumps(s)
+    assert all(type(v) is bool for v in s["outcome"]["flags"].values())

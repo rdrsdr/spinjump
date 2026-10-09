@@ -89,3 +89,8 @@ h3 { font-size: 13px; margin: 10px 0 4px; }
 .navlink { color: var(--accent); }
 .safety a { color: var(--accent); }
 .files { font-size: 12px; word-break: break-all; }
+.events { max-height: 190px; overflow-y: auto; border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+.events li.strongest { background: color-mix(in srgb, var(--crit) 10%, transparent); }
+.events .tag { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink2); margin-left: auto; }
+.spark { grid-template-columns: 96px 1fr; }
+.events li { flex-wrap: wrap; row-gap: 0; }

@@ -83,10 +83,10 @@
   <aside class="panel tele-panel" aria-label="Telemetry">
     <h2>Telemetry <span id="phase" class="phase">—</span></h2>
     <dl class="tele" id="tele"></dl>
-    <div class="spark"><span>height (m)</span><canvas id="sp-height" width="260" height="46"></canvas></div>
+    <div class="spark"><span>distance to floor (m)</span><canvas id="sp-height" width="260" height="46"></canvas></div>
     <div class="spark"><span>tension (N)</span><canvas id="sp-tension" width="260" height="46"></canvas></div>
-    <h3>Impacts</h3>
-    <ul id="events" class="events"><li class="muted">none</li></ul>
+    <h3>Impacts <span id="ev-count" class="muted"></span></h3>
+    <ul id="events" class="events" tabindex="0" aria-label="All impact events, newest first"><li class="muted">none</li></ul>
     <p class="hint">OK / WARNING / DAMAGE compare peak deceleration with an <b>illustrative</b> threshold; they are not injury predictions.</p>
     <div id="result" class="result" hidden></div>
   </aside>

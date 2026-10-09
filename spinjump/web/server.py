@@ -371,12 +371,28 @@ def _validation_text(e: Exception) -> str:
     return str(e)
 
 
+def _jsonable(o):
+    """Converte tipos NumPy (bool, inteiro, real, vetor) para JSON."""
+    if hasattr(o, "item") and callable(o.item) and getattr(o, "ndim", 0) == 0:
+        return o.item()
+    if hasattr(o, "tolist"):
+        return o.tolist()
+    return str(o)
+
+
+def _encode(msg: dict) -> str:
+    try:
+        return json.dumps(msg, ensure_ascii=False, default=_jsonable)
+    except (TypeError, ValueError) as e:   # nunca derruba o canal por uma mensagem
+        return json.dumps({"type": "error", "message": f"internal message encoding error: {e}"})
+
+
 async def _sender(cl: Client):
     while True:
         await cl.wake.wait()
         cl.wake.clear()
         while cl.msgs:
-            await cl.ws.send_text(json.dumps(cl.msgs.popleft(), ensure_ascii=False))
+            await cl.ws.send_text(_encode(cl.msgs.popleft()))
         if cl.frame is not None:
             f, cl.frame = cl.frame, None
             await cl.ws.send_bytes(f)

@@ -196,3 +196,27 @@ def test_prune_runs_keeps_most_recent(tmp_path):
     assert prune_runs(2, tmp_path) == 1
     assert sorted(p.name for p in tmp_path.iterdir()) == ["20261002-100000_b", "20261003-100000_c", "outra_pasta"]
     assert prune_runs(0, tmp_path) == 0
+
+
+def test_encode_numpy_values_never_breaks_stream():
+    import numpy as np
+    msg = {"type": "finished", "flag": np.bool_(False), "n": np.int64(3), "x": np.float64(1.5),
+           "v": np.array([1.0, 2.0])}
+    out = json.loads(server._encode(msg))
+    assert out == {"type": "finished", "flag": False, "n": 3, "x": 1.5, "v": [1.0, 2.0]}
+
+
+def test_restart_after_natural_finish_without_reload():
+    """Uma simulação que termina sozinha entrega 'finished' (com o impacto mais forte) e um novo
+    Start no mesmo WebSocket inicia outra simulação, sem recarregar a página."""
+    c = TestClient(server.app)
+    with c.websocket_connect("/ws") as ws:
+        _hello(ws)
+        _start(ws, {"name": "first", "solver": {"max_time_s": 2.0}, "ui": {"width": 320, "height": 200,
+                                                                          "playback_factor": 4.0}})
+        _, msgs = _recv_until(ws, lambda j: j["type"] == "finished", timeout=120)
+        fin = msgs[-1]
+        assert "max_event" in fin["impacts"] and "count" in fin["impacts"]
+        _start(ws, {"name": "second", "solver": {"max_time_s": 2.0}, "ui": {"width": 320, "height": 200}})
+        _, msgs = _recv_until(ws, lambda j: j["type"] == "started" and j["name"] == "second", timeout=60)
+        _recv_until(ws, lambda j: j["type"] == "telemetry" and j["t"] > 0.2, timeout=30)

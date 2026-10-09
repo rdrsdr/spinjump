@@ -188,7 +188,7 @@ function badge(cls) {
 }
 
 const TELE = [
-  ["speed", "speed", "m/s", 2], ["height", "CoM height", "m", 2], ["wall_dist", "distance to wall", "m", 2],
+  ["speed", "speed", "m/s", 2], ["floor_dist", "distance to floor", "m", 2], ["wall_dist", "distance to wall", "m", 2],
   ["object_turns", "object turns", "", 2], ["stored_turns", "turns on helix", "", 2],
   ["wound_turns", "turns in contact", "", 2], ["wound_len", "wound rope", "m", 1],
   ["coil_drop", "coil slide on wall", "m", 2],
@@ -209,14 +209,26 @@ function onTelemetry(t) {
     const flag = (k === "slack" && t.slack_flag) || (k === "tension_max" && t.load_warn);
     return `<dt>${lab}${u ? ` <span class="unit">(${u})</span>` : ""}</dt><dd class="${flag ? "flag" : ""}">${v == null ? "—" : Number(v).toFixed(nd)}</dd>`;
   }).join("");
-  const ev = t.events || [];
-  $("events").innerHTML = ev.length ? ev.slice().reverse().map((e) =>
-    `<li>${badge(e.classification)} ${e.surface === "ground" ? "ground" : "tower"} t=${Number(e.t_start).toFixed(2)} s · ${Number(e.decel_peak_g).toFixed(1)} g${e.active ? " (ongoing)" : ""}</li>`).join("")
-    : `<li class="muted">none</li>`;
-  hist.t.push(t.t); hist.z.push(t.height); hist.T.push(t.tension);
+  renderEvents(t.events || []);
+  hist.t.push(t.t); hist.z.push(t.floor_dist ?? t.height); hist.T.push(t.tension);
   if (hist.t.length > 1500) { hist.t.shift(); hist.z.shift(); hist.T.shift(); }
   spark("sp-height", hist.z, "#2a78d6"); spark("sp-tension", hist.T, "#eb6834");
   if (t.failure) msg(t.failure, "warnmsg");
+}
+
+// lista rolável com todos os impactos (mais recente no topo); o mais forte recebe a marca "strongest"
+let evKey = "";
+function renderEvents(ev) {
+  const key = ev.length + "|" + ev.map((e) => `${e.t_start}:${e.decel_peak_g}:${e.active ? 1 : 0}`).slice(-3).join(",");
+  if (key === evKey) return;
+  evKey = key;
+  $("ev-count").textContent = ev.length ? `(${ev.length})` : "";
+  if (!ev.length) { $("events").innerHTML = `<li class="muted">none</li>`; return; }
+  let iMax = 0;
+  ev.forEach((e, i) => { if (Number(e.decel_peak_g) > Number(ev[iMax].decel_peak_g)) iMax = i; });
+  $("events").innerHTML = ev.map((e, i) =>
+    `<li${i === iMax ? ' class="strongest"' : ""}>${badge(e.classification)} ${e.surface === "ground" ? "ground" : "tower"} t=${Number(e.t_start).toFixed(2)} s · ${Number(e.decel_peak_g).toFixed(1)} g${e.active ? " (ongoing)" : ""}${i === iMax ? ' <b class="tag">strongest</b>' : ""}</li>`)
+    .reverse().join("");
 }
 
 function spark(id, ys, color) {
@@ -247,12 +259,13 @@ function onFinished(r) {
       <li>ground arrival: <b>${ga.speed_ms ?? "—"} m/s</b></li>
       <li>slide: <b>${gp.slide_path_m ?? "—"} m</b>, swept ${gp.angle_swept_after_ground_deg ?? "—"}°</li>
       <li>max tension: <b>${ro.tension_max_N} N</b>; slack ${ro.slack_time_total_s} s</li>
-      <li>largest impact: ${mx ? `${mx.decel_peak_g} g ${badge(mx.classification)}` : "none"}</li>
+      <li>strongest impact: ${mx ? `<b>${mx.decel_peak_g} g</b> ${badge(mx.classification)} on the ${mx.surface} at t=${Number(mx.t_start).toFixed(2)} s (peak force ${Math.round(mx.force_normal_peak_filtered_N)} N; ${r.impacts.count} impacts in total)` : "none"}</li>
     </ul>
     <p><a href="${r.report_url}" target="_blank" rel="noopener"><b>Open the report</b></a></p>
     <details><summary>All files</summary><p class="files">${files}</p></details>
     <p class="hint">Reports are temporary on shared servers.</p>`;
   (r.warnings || []).forEach((w) => msg(w, "warnmsg"));
+  msg(`simulation finished: ${o.code} — press Start to run again`);
 }
 
 function showLoad(m) {
@@ -292,6 +305,7 @@ function connect() {
       showLoad(m);
     } else if (m.type === "started") {
       hist.t = []; hist.z = []; hist.T = [];
+      evKey = ""; renderEvents([]);
       $("result").hidden = true;
       setState("running");
       $("pitch-note").textContent = m.helix_visual_pitch_scale > 1 ? `(pitch magnified ×${m.helix_visual_pitch_scale}, visual only)` : "(true scale; coils can slide)";

@@ -326,7 +326,7 @@ class Simulation:
             else:
                 tr.slack_time_ground += dt
         tr.was_slack = rs.slack
-        wt = self.rope.wound_turns
+        wt = float(self.rope.wound_turns)
         tr.wound_min_turns = min(tr.wound_min_turns, wt)
         tr.rewind_max_turns = max(tr.rewind_max_turns, wt - tr.wound_min_turns)
         tr.stored_min_turns = min(tr.stored_min_turns, rs.u_s / (2 * math.pi))
@@ -468,6 +468,7 @@ class Simulation:
         v, _ = self._body_velocity()
         return dict(
             t=round(d.time, 4), speed=round(float(np.linalg.norm(v)), 3), height=round(float(com[2]), 3),
+            floor_dist=round(max(self.lowest_point(), 0.0), 3),
             wall_dist=round(self.wall_distance(), 3), object_turns=round(self.object_turns(), 3),
             wound_turns=round(self.rope.wound_turns, 3), stored_turns=round(rs.u_s / (2 * math.pi), 3),
             wound_len=round(rs.wound_len, 3), free_len=round(rs.l_free, 3),
@@ -478,5 +479,5 @@ class Simulation:
             tension_max=round(tr.t_max, 1), phase=_t(f"phase.{self._phase}"), phase_code=PHASES[self._phase],
             ground_fn=round(self.impacts.current_fn["ground"], 1),
             tower_fn=round(self.impacts.current_fn["tower"], 1),
-            events=self.impacts.live_events()[-6:], status=self.status, outcome=self.outcome,
+            events=self.impacts.live_events()[-300:], status=self.status, outcome=self.outcome,
             load_warn=tr.load_warn, failure=self.failure)
