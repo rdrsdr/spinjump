@@ -91,7 +91,7 @@ function buildForm(cfg) {
       let input;
       if (Array.isArray(kind)) {
         input = document.createElement("select");
-        const LABELS = { down: "bottom (helix goes down)", up: "top (helix goes up)" };
+        const LABELS = { down: "bottom coil", up: "top coil" };
         kind.forEach((o) => { const op = document.createElement("option"); op.value = o; op.textContent = LABELS[o] || o || "(none)"; input.appendChild(op); });
       } else if (kind === "bool") {
         input = document.createElement("input"); input.type = "checkbox";

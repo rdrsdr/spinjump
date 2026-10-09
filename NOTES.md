@@ -203,3 +203,74 @@ Antes das correções, o padrão com azimute 20° tinha variação de 11,5% no d
 - **Página inicial:** `/` (inglês) explica o que é simulado, deixa claro que é só simulação, que não é
   recomendação nem instrução, os riscos reais e "não tente", e pede confirmação antes de `/app`.
   Verificada com Chromium (layout, bloqueio sem confirmação, sem erros JS).
+
+## 11. Espiras deslizantes (opção B) e desenrolamento de baixo para cima (2026-10-09)
+
+Pedido: simular o escorregamento das espiras pela torre (a hipótese mais influente do modelo
+travado) e desenrolar de baixo para cima. O estado anterior está versionado (`git tag
+v1-locked-coils`, branch `main`); o trabalho está no branch `feature/sliding-coils`.
+
+### Formulação final (`spinjump/surface_rope.py`, `spinjump/_chain_kernel.py`)
+
+Cadeia de nós da âncora até o ponto de saída, presos à superfície do cilindro (2 GDL por nó nas
+coordenadas planificadas), com:
+- passo implícito com matriz bloco-tridiagonal 2×2 (rigidez axial unilateral + geométrica,
+  amortecimento axial e rigidez do vão na ponta), resolvida por Thomas em blocos;
+- atrito de Coulomb local por conjunto ativo (aderido = velocidade final nula; escorregando = força
+  μN contra o movimento; até 8 iterações), com N = T̄·Δs·cos²β/rc;
+- contato vertical entre voltas vizinhas (projeção);
+- pré-tensão de enrolamento;
+- inércia escalonada com piso ω·h ≤ 2;
+- janela móvel adaptativa;
+- força do vão aplicada em D pela regra da alavanca entre os dois nós vizinhos.
+
+O balanço do vão sem massa dá a perda na saída, e o amortecimento usa o alongamento efetivo do passo.
+
+### Tentativas e falhas (em ordem)
+
+1. **XPBD com massa real (7,5–15 g/nó), 2 iterações.** O nó da ponta, puxado com kN, chicoteava
+   (até 26 m/s), com resíduo de energia de até 110 kJ e trações espúrias de 8–11 kN.
+2. **Relaxação quase-estática (Gauss-Seidel vermelho-preto).** Estável, mas convergia devagar: a
+   descida das espiras ia de 0,5 a 3,5 m entre 3 e 40 varreduras por passo, e 40 varreduras custavam
+   38× o tempo real.
+3. **Amortecimento por diferença finita do alongamento.** Picos de 30–72 kN, porque os saltos do
+   ponto de saída viravam "velocidade". Corrigido com δ̇ = e·v_A + σ̇_D(1 − cos θ), σ̇_D geométrico.
+4. **Passo implícito com massa real.** Chicote a 70–250 m/s no ensaio isolado. A escala de massa
+   resolveu, e o resultado é invariante entre escalas 30 e 100 (3,35–3,41 m; atrito ~1,9 kJ).
+5. **Atrito aplicado depois da solução implícita.** Como a corda é rígida, o atrito agia no total do
+   trecho, não nó a nó, e o cabrestante dava 0,162 para μ = 0,2. O conjunto ativo corrigiu isso. A
+   janela fixa de 1,5 volta também truncava o perfil com μ baixo, daí a janela adaptativa.
+6. **Força aplicada no último nó com ponta geométrica.** O ponto de saída se deslocava mais que o
+   nó, e o resíduo ficava em 3 kJ. A regra da alavanca com ponta dinâmica fechou o balanço (resíduo
+   de 646 → 183 J em 10 s).
+7. **Caso degenerado:** parede sem atrito com corda sem massa e EA 100× divergia. O piso de inércia
+   o estabiliza, mas ainda há deriva de energia de ~8% (limitação registrada).
+8. **Bug da internacionalização:** uma variável local `t` escondia a função de tradução em
+   `impacts.py` e derrubava a simulação no primeiro impacto (visto como sessão congelando ao bater na
+   torre).
+
+### Validação
+
+Ver README §11 ("Espiras deslizantes"): cabrestante dinâmico (≤ 2,2% durante o escorregamento),
+pré-tensão, puxão inclinado, involuta, energia, sensibilidade e convergência. Comparação física: o
+freio total é parecido nos dois modelos (10,6 kJ contra 9,0 kJ em 10 s de voo), mas o mecanismo muda
+(atrito real na parede em vez da fórmula da dobra), e a descida fica mais rápida (24,6 s contra
+29,5 s até o solo). Isso concorda com a análise de curva de transição limitada pelo atrito: a corda
+sai inclinada em α e o ponto de saída desce da ordem de (rc/μ)(sec α − 1) ou mais.
+
+### Caos do pouso
+
+Com espiras deslizantes, o instante e a atitude do toque variam com perturbações mínimas: ±0,5 s
+para 1 mm/s na velocidade de lançamento. O manequim rígido tomba de forma diferente a cada vez. Num
+conjunto de 6 execuções, o deslizamento no solo teve média de 18,4 m e desvio-padrão de 5,7 m (dt
+base), contra 13,3 ± 2,2 m (dt/2). As grandezas de voo convergem (chegada 3,3%, voltas 0,7%,
+tração 0,1%, descida das espiras 3,8%). O estudo de convergência do produto continua comparando
+execuções únicas, como a especificação pede, e marca o deslizamento como NÃO CONFIÁVEL.
+
+### Desempenho
+
+Kernels `numba` (corda encostada e cargas distribuídas do vão): 117 µs/passo com espiras
+deslizantes e 53 µs/passo com travadas. Antes, eram 214 e 83 µs/passo em NumPy. O cache de
+compilação é gerado na construção da imagem (`/tmp/numba_cache`, legível e gravável por qualquer
+UID). As medições com várias sessões simultâneas variaram bastante neste host WSL2 (por exemplo,
+0,47× e 0,73× para 2 e 3 sessões sem limite de CPU numa rodada).

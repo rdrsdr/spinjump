@@ -37,6 +37,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from ._chain_kernel import dist_loads
 from .i18n import t as tr
 
 TWO_PI = 2.0 * math.pi
@@ -123,6 +124,7 @@ class WrapTether:
         self.s = RopeState()
         self._initialized = False
         self._qcache: dict[int, tuple] = {}
+        self._dl_out = np.zeros(3)
         # constantes por desempenho (o laço físico chama update a cada passo)
         self._kappa = p.kappa
         self._rc = p.rc
@@ -191,7 +193,7 @@ class WrapTether:
         return self.s.theta_u
 
     # --------------------------------------------------------------- dinâmica
-    def update(self, A: np.ndarray, vA: np.ndarray, wind_fn=None, air_density: float = 0.0,
+    def update(self, A: np.ndarray, vA: np.ndarray, wind=None, air_density: float = 0.0,
                g: float = 9.81) -> RopeState:
         p, s = self.p, self.s
         h = p.handedness
@@ -316,7 +318,7 @@ class WrapTether:
             cosk = ((X * thx) * tx + (X * thy) * ty + dz * tz) / max(l_geom, 1e-9) / tn
         kink = math.degrees(math.acos(max(-1.0, min(1.0, cosk))))
         free_mass = p.lin_density * (l_free / max(l_geom, 1e-9)) * l_rest
-        dist = self._dist_loads(l_free, free_mass, Dz, rz, (ex, ey, ez), vA, wind_fn, air_density, g)
+        dist = self._dist_loads(l_free, free_mass, Dz, rz, (ex, ey, ez), vA, wind, air_density, g)
         F = np.array((-T * ex, -T * ey, -T * ez))
         P1 = np.array((P1x, P1y, P1z))
         D = np.array((Dx, Dy, Dz))
@@ -338,28 +340,20 @@ class WrapTether:
         s.k, s.c = k, c
         return s
 
-    def _dist_loads(self, l_free, free_mass, Dz, rz, e3, vA, wind_fn, air_density, g) -> np.ndarray:
-        """Peso e arrasto distribuídos do vão livre (quadratura com ``element_length``), parcela
-        transmitida ao objeto pela regra da alavanca (material parado em D, vão girando em D)."""
+    def _dist_loads(self, l_free, free_mass, Dz, rz, e3, vA, wind, air_density, g) -> np.ndarray:
+        """Peso e arrasto distribuídos do vão livre (kernel compilado ``_chain_kernel.dist_loads``):
+        quadratura com ``element_length``, parcela transmitida ao objeto pela regra da alavanca."""
         p = self.p
-        dist = np.zeros(3)
-        if l_free <= 1e-6:
-            return dist
-        n = max(1, int(math.ceil(l_free / p.element_length)))
-        sq, sq_sum = self._quad(n)
-        dist[2] -= g * (free_mass / n) * sq_sum
-        if air_density > 0.0 and (p.cd_normal > 0 or p.cd_tangent > 0):
-            e = np.array(e3)
-            V = np.multiply.outer(sq, vA)
-            if wind_fn is not None:
-                V -= wind_fn(Dz + sq * rz)
-            vte = V @ e
-            V -= np.multiply.outer(vte, e)            # componente normal
-            q = 0.5 * air_density * p.rope_d * l_free / n
-            vn_mag = np.sqrt(np.einsum("ij,ij->i", V, V))
-            dist += (sq * vn_mag) @ V * (-q * p.cd_normal)
-            dist += (float((sq * np.abs(vte)) @ vte) * (-q * math.pi * p.cd_tangent)) * e
-        return dist
+        out = self._dl_out
+        if wind is not None and wind.enabled:
+            dist_loads(l_free, free_mass, Dz, rz, e3[0], e3[1], e3[2], vA[0], vA[1], vA[2], air_density,
+                       p.cd_normal, p.cd_tangent, p.rope_d, p.element_length, g, True, wind.U,
+                       wind.dir[0], wind.dir[1], wind.g[0], wind.g[1], wind.alpha, wind.zref, out)
+        else:
+            dist_loads(l_free, free_mass, Dz, rz, e3[0], e3[1], e3[2], vA[0], vA[1], vA[2], air_density,
+                       p.cd_normal, p.cd_tangent, p.rope_d, p.element_length, g, False, 0.0, 0.0, 0.0,
+                       0.0, 0.0, 0.0, 1.0, out)
+        return out.copy()
 
     @property
     def wound_turns(self) -> float:

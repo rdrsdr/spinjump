@@ -172,7 +172,7 @@ class SurfaceRope(WrapTether):
         return flux
 
     # --------------------------------------------------------------- dinâmica
-    def update(self, A: np.ndarray, vA: np.ndarray, wind_fn=None, air_density: float = 0.0,
+    def update(self, A: np.ndarray, vA: np.ndarray, wind=None, air_density: float = 0.0,
                g: float = 9.81) -> RopeState:
         p, s, h = self.p, self.s, self.h
         rc = p.rc
@@ -207,8 +207,9 @@ class SurfaceRope(WrapTether):
                     flux += self._update_departure(xt, g)
                     break
         D = self._D_point()
-        r = A - D
-        l_free = float(np.linalg.norm(r))
+        rx_, ry_, rz_ = A[0] - D[0], A[1] - D[1], A[2] - D[2]
+        l_free = math.sqrt(rx_ * rx_ + ry_ * ry_ + rz_ * rz_)
+        r = np.array((rx_, ry_, rz_))
         e = r / l_free if l_free > 1e-9 else np.array([0.0, 0.0, -1.0])
         l_rest = max(p.length - self.sig_D, 1e-3)
         delta = l_free - l_rest
@@ -216,17 +217,20 @@ class SurfaceRope(WrapTether):
         c_ax = 2.0 * p.zeta * math.sqrt(k_ax * p.m_eff)
         elastic_free = 0.5 * k_ax * delta * delta if delta > 0.0 else 0.0
         # direção do vão no plano tangente em D (componente radial nula pela tangência)
-        phiD = math.atan2(D[1], D[0])
-        ex_s = float(e @ np.array([-math.sin(phiD), math.cos(phiD), 0.0]))
+        cphi, sphi = D[0] / rc, D[1] / rc
+        ex_s = -e[0] * sphi + e[1] * cphi
         ez_s = float(e[2])
         nrm = math.hypot(ex_s, ez_s)
         if nrm > 1e-9:
-            self.lay = np.array([ex_s / nrm, ez_s / nrm])
+            self.lay[0], self.lay[1] = ex_s / nrm, ez_s / nrm
         # direção da corda na superfície em D e perda na dobra ao descascar
-        tau = np.array([self.x[self.k + 1] - self.x[self.k], self.z[self.k + 1] - self.z[self.k]])
-        tn = float(np.linalg.norm(tau))
-        tau = tau / tn if tn > 1e-12 else self.lay
-        cos_k = float(tau @ self.lay) if not self.straight else 1.0
+        kk = self.k
+        tx_, tz_ = self.x[kk + 1] - self.x[kk], self.z[kk + 1] - self.z[kk]
+        tn = math.hypot(tx_, tz_)
+        if self.straight or tn <= 1e-12:
+            cos_k = 1.0
+        else:
+            cos_k = (tx_ * self.lay[0] + tz_ * self.lay[1]) / tn
         release = max(0.0, sig_prev - self.sig_D) / h
         # δ̇ = e·v_A + σ̇_D·(1 − cos θ), com σ̇_D geométrico (tangência): ẋ_D = rc·(θ̇ − s·β̇) e
         # dσ/dx da corda em D; os saltos da atualização da corda encostada não entram
@@ -264,7 +268,7 @@ class SurfaceRope(WrapTether):
         self._span_prev = (elastic_free, T * float(e @ vA) * h, -T * float(e @ dD), f_damp, delta)
         self.e_fric_total += e_fric
         free_mass = p.lin_density * l_rest
-        dist = self._dist_loads(l_free, free_mass, D[2], r[2], (e[0], e[1], e[2]), vA, wind_fn, air_density, g)
+        dist = self._dist_loads(l_free, free_mass, D[2], r[2], (e[0], e[1], e[2]), vA, wind, air_density, g)
         F = -T * e
         u_s = abs(self.x[self.k] + self.w * (self.x[self.k + 1] - self.x[self.k]) - self.x[0]) / rc \
             if not self.straight else 0.0

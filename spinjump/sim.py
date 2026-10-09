@@ -205,7 +205,7 @@ class Simulation:
 
     def _update_rope_only(self):
         A = self.d.site_xpos[self.b.site_id].copy()
-        self.rope.update(A, self._site_velocity(), self.wind.at_many, self.air_rho, G)
+        self.rope.update(A, self._site_velocity(), self.wind, self.air_rho, G)
 
     def _energy(self) -> float:
         rs = self.rope.s
@@ -252,7 +252,7 @@ class Simulation:
         v_com, w_com = self._body_velocity()
         A = d.site_xpos[self.b.site_id].copy()
         vA = self._site_velocity()
-        rs = self.rope.update(A, vA, self.wind.at_many if self.air_rho > 0 else None, self.air_rho, G)
+        rs = self.rope.update(A, vA, self.wind if self.air_rho > 0 else None, self.air_rho, G)
         Fr = rs.force_on_obj
         if self.release_rope_at_ground and self.tr.first_ground_t is not None:
             Fr = np.zeros(3)

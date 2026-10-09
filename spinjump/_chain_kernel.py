@@ -330,3 +330,52 @@ def warmup() -> None:
     out = np.zeros(5)
     chain_step(x, z, vx, vz, 0, n - 1, 0.2, 5e4, 0.1, 0.75, 0.015, 9.81, 2.5e-4, 10.0, -5.0, 1e3,
                0.4, 2.5, -1, 0.012, 1.0, 0.5, out)
+
+
+@njit(cache=True)
+def dist_loads(l_free, free_mass, Dz, rz, ex, ey, ez, vx, vy, vz, rho, cdn, cdt, d, elem, g,
+               wind_on, wU, wdx, wdy, gx, gy, alpha, zref, out):
+    """Peso e arrasto distribuídos do vão livre (quadratura de pontos médios com segmentos de
+    ``elem``), parcela transmitida ao objeto pela regra da alavanca (material parado em D)."""
+    out[0] = 0.0
+    out[1] = 0.0
+    out[2] = 0.0
+    if l_free <= 1e-6:
+        return
+    n = max(1, int(math.ceil(l_free / elem)))
+    ds = l_free / n
+    sq_sum = 0.0
+    fx = 0.0
+    fy = 0.0
+    fz = 0.0
+    q = 0.5 * rho * d * ds
+    for i in range(n):
+        sq = (i + 0.5) / n
+        sq_sum += sq
+        if rho > 0.0 and (cdn > 0.0 or cdt > 0.0):
+            ux = sq * vx
+            uy = sq * vy
+            uz = sq * vz
+            if wind_on:
+                if alpha == 0.0:
+                    u = wU
+                else:
+                    zz = Dz + sq * rz
+                    if zz < 0.5:
+                        zz = 0.5
+                    u = wU * (zz / zref) ** alpha
+                ux -= u * wdx + gx
+                uy -= u * wdy + gy
+            vt = ux * ex + uy * ey + uz * ez
+            nx = ux - vt * ex
+            ny = uy - vt * ey
+            nz = uz - vt * ez
+            vn = math.sqrt(nx * nx + ny * ny + nz * nz)
+            cn = -q * cdn * vn * sq
+            ct = -q * math.pi * cdt * abs(vt) * vt * sq
+            fx += cn * nx + ct * ex
+            fy += cn * ny + ct * ey
+            fz += cn * nz + ct * ez
+    out[0] = fx
+    out[1] = fy
+    out[2] = fz - g * (free_mass / n) * sq_sum

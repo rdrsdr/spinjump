@@ -16,7 +16,9 @@ short_description: Live 3D physics sim of a rope spiral around a chimney
 > kill or seriously injure — **do not attempt it.**
 
 A virtual crash-test dummy tied to a rope wound around the top of a 50 m chimney leaves the edge,
-swings around the chimney as the rope unwinds, spirals down, hits the ground and slides. Physics
+swings around the chimney as the rope unwinds, spirals down, hits the ground and slides. The rope
+lying on the wall is simulated with friction: with a steep pull the coils slide down the chimney, and
+that friction brakes the descent (a checkbox switches to the faster locked-coil model). Physics
 (MuJoCo) and 3D rendering run on the server; your browser receives live frames and telemetry.
 
 **How to use:** read the intro page and confirm → pick a preset or edit the form → **Start**. Drag the

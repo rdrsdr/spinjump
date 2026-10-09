@@ -9,14 +9,14 @@ class Dummy:
     def push_frame(self, f): pass
 
 
-def run(n, secs=4.0):
+def run(n, secs=6.0):
     mgr = server.Manager(max_sessions=4)
     ss = []
     for i in range(n):
         cl = Dummy(); cl.sid = f"{i:032x}"
         mgr.clients.add(cl)
         ss.append(mgr.start(cl, load_config(sets=["ui.width=320", "ui.height=200"])))
-    time.sleep(1.0)
+    time.sleep(4.0)
     t0 = [s.last_t for s in ss]; w0 = time.perf_counter()
     time.sleep(secs)
     dt = time.perf_counter() - w0

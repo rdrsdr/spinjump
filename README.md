@@ -138,7 +138,7 @@ desconhecidos são rejeitados. Overrides: `--set caminho=valor` (repetível, val
 | seção | parâmetros principais |
 |---|---|
 | `tower` | `height_m`, `diameter_m`, `wall_friction` (objeto–parede) |
-| `rope` | `model` (`wrap_tether`), `length_m` (`auto` ou m), `diameter_m`, `linear_density_kg_m`, `element_length_m` (resolução da quadratura de peso/arrasto do vão), `axial_EA_N` (N), `axial_damping_ratio` (ζ), `wall_friction` (cabrestante), `wind_drag_Cd_normal/tangent`, `winding_pitch_factor`, `winding_handedness`, `anchor_below_top_m`, `breaking_load_N`, `load_warn_fraction`; inaplicáveis ao modelo: `bend_E_pa`, `twist_G_pa`, `self_collision`, `ground_friction` (explicados no relatório) |
+| `rope` | `model` (`wrap_tether`), `coil_sliding`, `helix_vertical` (`down`/`up`), `winding_pretension_N`, `coil_window_turns`, `coil_update_every_steps`, `coil_mass_scale`, `length_m` (`auto` ou m), `diameter_m`, `linear_density_kg_m`, `element_length_m` (resolução da quadratura de peso/arrasto do vão), `axial_EA_N` (N), `axial_damping_ratio` (ζ), `wall_friction` (cabrestante), `wind_drag_Cd_normal/tangent`, `winding_pitch_factor`, `winding_handedness`, `anchor_below_top_m`, `breaking_load_N`, `load_warn_fraction`; inaplicáveis ao modelo: `bend_E_pa`, `twist_G_pa`, `self_collision`, `ground_friction` (explicados no relatório) |
 | `object` | `type` (`mannequin`/`sandbag`), `mass_kg`, `height_m`, `radius_m`, `attach_height_fraction` (ponto de fixação no eixo do corpo), `start_clearance_m`, `drag_CdA_m2`, `geom_friction` |
 | `launch` | `mode`, `speed_ms` (m/s), `impulse_Ns` (N·s), `azimuth_deg`, `elevation_deg`, `duration_ms` |
 | `air` / `wind` | `enabled`, `density_kg_m3`; `preset`, `speed_mean_ms`, `direction_deg` (para onde sopra, a partir de +x), `gust_std_ms`, `correlation_time_s`, `shear_exponent` (U(z) = U·(z/z_ref)^α), `reference_height_m`, `seed`, `presets` |
@@ -147,7 +147,8 @@ desconhecidos são rejeitados. Overrides: `--set caminho=valor` (repetível, val
 | `solver` | `timestep_s`, `integrator`, `iterations`, `max_time_s`, `rest_speed_ms`, `rest_hold_s`, `rewind_threshold_turns`, `stop_on_structure_hit`, `output_hz` |
 | `ui` | `render_hz`, `playback_factor` (0,1×–4×), `width`, `height`, `jpeg_quality`, `helix_visual_pitch_scale` (somente visual), `rope_visual_radius_m` (somente visual), `camera` |
 
-Valores alterados em relação aos iniciais da especificação, com evidência em NOTES §4–5:
+Valores alterados em relação aos iniciais da especificação, com evidência em NOTES §4–5 e §11
+(o sentido da hélice e as espiras deslizantes foram pedidos depois da entrega inicial):
 `contact.solref` [0,004, 1,0] → **[0,02, 1,5]**, `solver.timestep_s` 0,5 ms → **0,25 ms**,
 `ground.friction_rolling` 1e-4 → **0,02 m**, `ground.friction_torsional` 0,005 → **0,02 m** e
 `launch.azimuth_deg` 20° → **90°**.
@@ -177,7 +178,42 @@ alcançam o solo, considerando a âncora e o objeto deitado junto à base, geram
 
 O plugin `mujoco.elasticity.cable` foi testado primeiro e **reprovado**: divergiu em < 0,7 s,
 atravessou a parede, as espiras escorregaram e custou 20–3000 s de CPU por segundo simulado (NOTES
-§2). A formulação adotada é explícita e validável:
+§2). A formulação adotada é explícita e validável. A parte encostada na torre tem duas variantes,
+escolhidas por `rope.coil_sliding` (checkbox na interface):
+
+### 5.1 Espiras deslizantes (`coil_sliding: true`, padrão)
+
+- A corda encostada (da âncora ao ponto de saída D) é uma **cadeia de nós presos à superfície** do
+  cilindro (coordenadas planificadas: ao redor × altura), espaçados de `element_length_m`. Não há
+  colisão 3D, então ela não atravessa a parede por construção.
+- Passo **implícito** (Euler implícito linearizado; sistema bloco-tridiagonal 2×2 resolvido
+  diretamente) com rigidez axial unilateral, amortecimento e a rigidez do vão na ponta. O kernel é
+  compilado com `numba`.
+- **Atrito de Coulomb local** com a parede (`rope.wall_friction`), resolvido por conjunto ativo
+  (nós aderidos ou escorregando). A força normal vem da tração e da curvatura sobre o cilindro,
+  `N = T̄·Δs·cos²β/rc`. Disso saem o cabrestante (exp(μθ), verificado dinamicamente) e o
+  **escorregamento das espiras** quando o puxão é inclinado.
+- **Pré-tensão de enrolamento** (`winding_pretension_N`, padrão 20 N): sem ela não há força normal e
+  as espiras caem pelo próprio peso.
+- **Contato entre voltas**: uma volta não atravessa a vizinha na vertical.
+- `helix_vertical: down` (padrão): a hélice desce a partir da âncora e **desenrola de baixo para
+  cima**. Com `up`, a espira puxada é a de cima e se apoia nas de baixo.
+- A massa da corda encostada é irrelevante diante das trações. A inércia dos nós é **escalonada**
+  (`coil_mass_scale`, padrão 50; o peso usa a massa real), técnica quase-estática que evita o chicote
+  numérico de nós de 15 g. O resultado não depende da escala entre 20 e 150 (NOTES §11).
+- Só os nós dentro de uma janela a partir do ponto de saída se movem (`coil_window_turns`, mínimo
+  1,5 volta, ampliada automaticamente para ln(100)/(2πμ) voltas com atrito baixo). Os demais ficam
+  parados porque a tração decai exponencialmente ao longo do enrolamento.
+- O ponto de saída D continua dado pela tangência a partir do objeto. A força do vão é aplicada em
+  D pela regra da alavanca, e o balanço de energia fecha (resíduo em voo de 0,4% no padrão).
+
+Efeito no cenário padrão: com a corda saindo inclinada, as espiras escorregam pela torre (até
+~11,6 m) e o **atrito delas na parede vira o freio da descida**, com 21,6 kJ dissipados. No modelo
+travado, esse papel era da perda na dobra.
+
+### 5.2 Espiras travadas (`coil_sliding: false`)
+
+Modelo original, mais leve (~0,2 s de CPU por s simulado):
 
 - **Hélice armazenada** (âncora → P1), travada por atrito: só diminui, descascando na saída. As voltas
   desenhadas somem junto.
@@ -193,9 +229,10 @@ atravessou a parede, as espiras escorregaram e custou 20–3000 s de CPU por seg
 - **Perda na dobra de saída** ao descascar com o vão inclinado: dissipa ~60% da energia no padrão e
   freia a descida. É a hipótese mais influente (NOTES §3.1).
 
-A geometria desenhada (hélice, geodésica, vão e folga) vem do **mesmo estado** que calcula as
-forças. Na cena, o passo da hélice é ampliado (padrão ×12) e a corda é engrossada **só para
-leitura**, com rótulo na legenda fora da imagem. A forma da corda com folga é ilustrativa (parábola
+A geometria desenhada (corda encostada, geodésica, vão e folga) vem do **mesmo estado** que calcula
+as forças. Com espiras travadas, o passo da hélice é ampliado na cena (padrão ×12, só para
+leitura); com espiras deslizantes, a cena mostra a geometria real. Nos dois casos a corda é
+engrossada para leitura, com rótulo na legenda fora da imagem. A forma da corda com folga é ilustrativa (parábola
 com o comprimento disponível).
 
 ### Matriz de colisões
@@ -303,8 +340,8 @@ com dois visitantes simultâneos, ~0,95× cada (com três cairia para ~0,5×, po
 - Opcional (GPU NVIDIA no servidor, com NVIDIA Container Toolkit):
   `docker compose -f compose.yaml -f compose.gpu.yaml up --build` (usa `MUJOCO_GL=egl`).
   **Não testado neste ambiente (sem GPU).**
-- Desempenho medido (CPU, 14 vCPUs/WSL2): física 0,29–0,43 s de CPU por s simulado; quadro 960×600
-  em ~23–30 ms. Uma sessão sustenta 1× e 2×; com 4× pedido, ~2,9× efetivos. Com sessões em processos
+- Desempenho medido (CPU, 14 vCPUs/WSL2): física ~0,5 s de CPU por s simulado com espiras
+  deslizantes e ~0,2 s com espiras travadas (kernels `numba`); quadro 960×600 em ~23–40 ms. Uma sessão sustenta 1× e 2×; com 4× pedido, ~2,9× efetivos. Com sessões em processos
   separados, 2 simultâneas rodam a 1,0× cada e 3 a ~0,94× (antes, na mesma thread de processo, 2
   sessões caíam para 0,6× por disputa do GIL).
 - Logs: uvicorn sem access log (nível `error`), Compose com `logging: driver: none`. Não há log de
@@ -374,19 +411,46 @@ O número de voltas antes do solo (~3) é quase insensível ao lançamento: é u
 descida em espiral freado pela dobra de saída (NOTES §3.1, §5). O lançamento decide a fase inicial
 (colisão, tranco, reenrolamento); ar e atrito decidem a chegada e o deslizamento.
 
+### Espiras deslizantes (padrão atual; 48 testes aprovados)
+
+| ensaio | resultado medido |
+|---|---|
+| cabrestante dinâmico | inclinação de ln T na zona que escorrega: 0,196–0,2015 para μ = 0,2 e 0,391–0,399 para μ = 0,4 (≤ 2,2%; tolerância 5%) |
+| pré-tensão | 20 N seguram as espiras contra o peso (< 2 mm); sem pré-tensão elas caem |
+| puxão inclinado 60° | `down`: as espiras descem 10,3 m; `up`: o contato entre voltas segura (1 mm) |
+| involuta (atrito realista na parede) | erro espacial 78,6 mm em ℓ = 15,7 m; ΔKE 0,4% |
+| balanço de energia em voo | resíduo 184 J (0,4% de E0) no voo completo, caindo com dt |
+| sensibilidade (10 s de voo) | descida das espiras 4,84–4,99 m e voltas 1,441–1,446 para dt ÷ 2, resolução × 2, janela 1,5–3 voltas, escala de massa 20–150 e atualização a cada 1–8 passos |
+| convergência do cenário completo | chegada 0,9%, tração máxima 0,5%; deslizamento no solo **21% → NÃO CONFIÁVEL** |
+| caos do pouso | perturbar a velocidade de lançamento em 1 mm/s muda o deslizamento de 9,7 para 27,7 m (desvio-padrão 5,7 m); as grandezas de voo mal mudam (chegada ±0,17 m/s, voltas ±0,04) |
+
+Cenário padrão com espiras deslizantes: `AT_REST_CLEAN`, **2,78 voltas** antes do solo, chegada a
+**10,05 m/s** em t = 24,6 s, deslizamento de 10,0 m (não confiável, ver acima), tração máxima 1825 N,
+espiras descendo até 11,6 m pela torre, atrito na parede de 21,6 kJ. Custo: 0,50 s de CPU por s
+simulado. Uma sessão roda em tempo real; num servidor de 2 CPUs, duas sessões simultâneas ficaram
+entre 0,66× e 0,93× (medições variáveis neste host). Com as mesmas condições, as espiras travadas
+dão 3,03 voltas e chegada a 9,31 m/s em 29,5 s.
+
+As tabelas acima desta seção foram medidas com as espiras travadas e a hélice subindo (modelo
+original).
+
 ### Não verificado
 
 - Renderização EGL/GPU (`compose.gpu.yaml`): sem GPU no ambiente.
-- Escorregamento das espiras pela torre (não modelado; há só o indicador `coil_slip_ratio_max`, que
-  ficou em 0,94 no padrão, perto do limite 1).
+- Desempenho de várias sessões simultâneas com espiras deslizantes no Hugging Face real (medido só
+  localmente com `--cpus 2`).
 - Nada sobre lesão humana: os limiares são ilustrativos.
 
 
 ## 12. Limites metodológicos
 
-- Modelo de corda simplificado: espiras travadas por atrito (sem escorregamento ao longo da torre),
-  trecho geodésico sem atrito, vão sem massa inercial e sem flexão/torção, forma com folga
-  ilustrativa. A perda na dobra de saída domina o freio da descida (NOTES §3.1).
+- Modelo de corda simplificado. Com espiras deslizantes: corda encostada como cadeia sobre a
+  superfície com Coulomb simples, contato entre voltas só na vertical, inércia escalonada e vão
+  reto sem massa inercial nem flexão/torção. O atrito corda–parede domina o freio da descida. Com
+  espiras travadas: sem escorregamento ao longo da torre, e a perda na dobra de saída é o freio
+  (NOTES §3.1). Nos dois casos a forma com folga é ilustrativa.
+- Com espiras deslizantes, parede sem atrito combinada com corda sem massa e muito rígida é mal
+  condicionada (deriva de energia de ~8%).
 - Objeto rígido único (manequim sem articulações): o pouso tende a tombamentos caóticos. Os
   detalhes do pouso variam, e as métricas agregadas são verificadas por convergência.
 - Contato macio com complacência escolhida (20 ms). Os picos dependem disso e não representam
