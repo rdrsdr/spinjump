@@ -39,15 +39,15 @@ Source of truth for requirements: [prompt.md](prompt.md) (spec) and [planning.md
 
 | item | state |
 |---|---|
-| branch `main` | `70b5477` — first complete version, **locked coils** only; tagged `v1-locked-coils` |
+| branch `main` | `4155e2b` — first complete version, **locked coils** only; tagged `v1-locked-coils` |
 | branch `feature/sliding-coils` (current) | sliding coils + bottom-to-top unwinding + numba kernels + UI fixes; **not merged into `main`** |
 | tests | 52 passing (`make test`, a few minutes) |
 | default model | `rope.coil_sliding: true`, `rope.helix_vertical: down` |
-| user-owned, leave alone | uncommitted `.gitignore` change (ignores `publish.txt`) and `publish.txt` |
+| local only, git-ignored | `publish.txt` (user notes) and `out/` |
 
-Commits on the feature branch (oldest first): `c604063` sliding coils discretised on the tower
-surface · `464939f` remove obsolete debug scripts · `d3ffa74` numba kernels, adaptive window, UI,
-docs · `71df578` UI: restart after finish, scrollable impact list, distance to floor.
+Commits on the feature branch (oldest first): `be7b419` sliding coils discretised on the tower
+surface · `f081f41` remove obsolete debug scripts · `b38c6f5` numba kernels, adaptive window, UI,
+docs · `4a5c848` UI: restart after finish, scrollable impact list, distance to floor.
 
 To revert to the locked-coils-only version: `git checkout main` (or `git checkout v1-locked-coils`).
 Sliding coils can also be switched off at runtime (`--set rope.coil_sliding=false` or the UI
@@ -129,8 +129,9 @@ prototypes/              cable-plugin prototype (rejected) + calibration/study s
 deploy/huggingface/      Space card (README.md) and make_space.sh
 docs/DOCUMENTACAO.md     full documentation in Portuguese (spec-required)
 NOTES.md                 decisions, failures, calibration, performance (Portuguese)
+shithappens.md           launch/wind settings that make the object hit the tower (Portuguese)
 Dockerfile, compose.yaml, compose.gpu.yaml (EGL/NVIDIA, untested), Makefile, dev.sh, requirements.txt
-out/                     run outputs (git-ignored); MUJOCO_LOG.TXT is a leftover from the cable prototype
+out/                     run outputs (git-ignored)
 ```
 
 ## 5. Architecture
@@ -276,7 +277,8 @@ Hugging Face profile (2 vCPUs): 1 session runs at 1.0× real time, 2 sessions at
 - Don't run `pkill -f <pattern>` from a shell whose own command line contains the pattern.
 - The image declares `VOLUME /app/out`; `dev.sh` therefore mounts `out/` explicitly.
 - CSS: `[hidden]{display:none !important}` is required because some elements set `display:flex`.
-- Commits: only when the user asks; stage own files only (not `.gitignore` / `publish.txt`); end
+- Commits: only when the user asks; author identity is `Rodrigo Sodre <141188401+rdrsdr@users.noreply.github.com>` (repo-local
+  git config; GitHub account `rdrsdr`); end
   messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
 ## 10. History of user requests
