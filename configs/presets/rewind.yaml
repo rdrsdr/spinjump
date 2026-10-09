@@ -1,0 +1,4 @@
+description: "Lançamento para o sentido de enrolar (azimute −60°): tende a reenrolar e bater na torre."
+description_en: "Launch toward the winding direction (azimuth −60°): tends to rewind and hit the tower."
+name: rewind
+launch: {mode: velocity, speed_ms: 6.0, azimuth_deg: -60.0, elevation_deg: 0.0}

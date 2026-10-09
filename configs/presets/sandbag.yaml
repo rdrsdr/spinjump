@@ -1,0 +1,4 @@
+description: "Saco de areia de 60 kg (cápsula 0,9 m × r 0,2 m) preso pela extremidade superior."
+description_en: "60 kg sandbag (0.9 m × r 0.2 m capsule) attached at its top end."
+name: sandbag
+object: {type: sandbag, mass_kg: 60.0, height_m: 0.9, radius_m: 0.2, attach_height_fraction: 1.0, drag_CdA_m2: 0.35}

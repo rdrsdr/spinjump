@@ -1,0 +1,15 @@
+# Opcional: renderização EGL em GPU NVIDIA no servidor (requer NVIDIA Container Toolkit).
+# docker compose -f compose.yaml -f compose.gpu.yaml up --build
+services:
+  ui:
+    environment:
+      MUJOCO_GL: egl
+      PYOPENGL_PLATFORM: egl
+      NVIDIA_DRIVER_CAPABILITIES: graphics,compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpinJump — live simulator</title>
+<script>
+  // the simulator opens only after the intro page has been acknowledged
+  (function () {
+    var viaUrl = new URLSearchParams(location.search).get("ack") === "1";
+    var stored = false;
+    try { stored = sessionStorage.getItem("spinjump_ack") === "1"; if (viaUrl) sessionStorage.setItem("spinjump_ack", "1"); } catch (e) { /* sem armazenamento */ }
+    if (!stored && !viaUrl) location.replace("/");
+  })();
+</script>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="topline">
+    <h1>SpinJump <span class="sub">live 3D physics simulation (MuJoCo, server-side)</span></h1>
+    <nav><span id="server-load" class="muted" title="simulations running on this server"></span>
+      <a href="/" class="navlink">About &amp; safety</a></nav>
+  </div>
+  <p class="safety" id="safety" role="note"><strong>Simulation only.</strong> Qualitative, exploratory results from a simplified model — not a human-safety validation, not instructions. Do not attempt this.</p>
+</header>
+
+<div class="layout">
+  <aside class="panel form-panel" aria-label="Parameters">
+    <div class="controls">
+      <button id="btn-start" class="primary">Start</button>
+      <button id="btn-pause" disabled>Pause</button>
+      <button id="btn-resume" disabled>Resume</button>
+      <button id="btn-stop" disabled>Stop</button>
+    </div>
+    <label class="row">Preset
+      <select id="preset"><option value="">(default)</option></select>
+    </label>
+    <p id="preset-desc" class="hint"></p>
+    <form id="form" autocomplete="off"></form>
+  </aside>
+
+  <section class="stage" aria-label="3D scene">
+    <div class="cam-bar">
+      <span class="cam-label">Camera</span>
+      <button data-cam="free" class="cam active">Free</button>
+      <button data-cam="side" class="cam">Side</button>
+      <button data-cam="follow" class="cam">Follow</button>
+      <span class="sep"></span>
+      <button id="zoom-in" title="zoom in">+</button>
+      <button id="zoom-out" title="zoom out">−</button>
+      <button id="cam-up" title="move focus up">▲</button>
+      <button id="cam-down" title="move focus down">▼</button>
+      <button id="cam-reset" title="reset camera">⟲</button>
+    </div>
+    <div class="viewport" id="viewport">
+      <img id="frame" alt="3D scene rendered on the server" draggable="false">
+      <div class="placeholder" id="placeholder">Set the parameters and press <b>Start</b>. The scene is computed and rendered on the server; each visitor gets their own simulation.</div>
+    </div>
+    <div class="playback">
+      <label>Playback <output id="pb-out">1.0×</output>
+        <input type="range" id="playback" min="0.1" max="4" step="0.1" value="1">
+      </label>
+      <div class="clock">
+        <span>sim time <b id="t-sim">—</b> s</span>
+        <span>wall time <b id="t-wall">—</b> s</span>
+        <span>effective rate <b id="rate">—</b></span>
+        <span class="muted">render <b id="render-ms">—</b> ms</span>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:#d97319"></i>stored helix <em id="pitch-note">(pitch magnified, visual only)</em></span>
+      <span><i class="sw" style="background:#f29926"></i>geodesic wrap</span>
+      <span><i class="sw" style="background:#f2cc1a"></i>free span, taut</span>
+      <span><i class="sw" style="background:#73bfff"></i>free span, slack (illustrative shape)</span>
+      <span><i class="dot" style="background:#e61a1a"></i>anchor</span>
+      <span><i class="dot" style="background:#1ae64d"></i>departure point</span>
+      <span class="muted">rope thickness magnified for readability</span>
+    </div>
+    <div id="messages" class="messages" aria-live="polite"></div>
+  </section>
+
+  <aside class="panel tele-panel" aria-label="Telemetry">
+    <h2>Telemetry <span id="phase" class="phase">—</span></h2>
+    <dl class="tele" id="tele"></dl>
+    <div class="spark"><span>height (m)</span><canvas id="sp-height" width="260" height="46"></canvas></div>
+    <div class="spark"><span>tension (N)</span><canvas id="sp-tension" width="260" height="46"></canvas></div>
+    <h3>Impacts</h3>
+    <ul id="events" class="events"><li class="muted">none</li></ul>
+    <p class="hint">OK / WARNING / DAMAGE compare peak deceleration with an <b>illustrative</b> threshold; they are not injury predictions.</p>
+    <div id="result" class="result" hidden></div>
+  </aside>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

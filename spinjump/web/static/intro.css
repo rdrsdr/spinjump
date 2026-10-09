@@ -1,0 +1,29 @@
+/* Página inicial (sobre e segurança). Usa os tokens de style.css. */
+body.intro { background: var(--page); }
+.doc { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; font-size: 15px; line-height: 1.6; }
+.doc h1 { font-size: 26px; line-height: 1.25; margin: 4px 0 12px; text-wrap: balance; }
+.doc h2 { font-size: 18px; margin: 28px 0 8px; display: block; }
+.eyebrow { margin: 0; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-size: 13px; }
+.lede { font-size: 16px; color: var(--ink2); }
+.callout { border: 1px solid var(--line); border-left: 5px solid var(--crit); background: var(--surface);
+  border-radius: 6px; padding: 4px 18px 8px; margin: 20px 0; }
+.callout h2 { margin-top: 12px; }
+.callout li { margin: 6px 0; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+.risks li { margin: 6px 0; }
+.diagram { margin: 8px 0 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+.diagram svg { width: 100%; height: auto; display: block; }
+.d-ground { stroke: var(--muted); stroke-width: 2; }
+.d-tower { fill: #8a6a55; }
+.d-coil line { stroke: #d97319; stroke-width: 2.5; }
+.d-path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 5; }
+.d-rope { stroke: #c9a20f; stroke-width: 2.5; }
+.d-body { fill: var(--accent); }
+.d-depart { fill: #1aa64d; }
+.d-label { fill: var(--ink2); font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; }
+.ack { margin: 32px 0 8px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.ack label { display: flex; gap: 10px; align-items: flex-start; }
+.ack input { margin-top: 5px; flex: none; width: auto; }
+.ack button { margin-top: 14px; padding: 8px 16px; font-size: 15px; }
+.foot { margin-top: 28px; color: var(--muted); font-size: 13px; }
+@media (max-width: 620px) { .two { grid-template-columns: 1fr; } .doc h1 { font-size: 22px; } }

@@ -1,0 +1,4 @@
+description: "Solo com gelo (atrito 0,1): deslizamento longo, trajetória no solo dominada pela corda."
+description_en: "Icy ground (friction 0.1): long slide, ground path dominated by the rope."
+name: ice
+ground: {preset: ice}

@@ -1,0 +1,5 @@
+description: "Corda curta (35 m): não alcança o solo; o objeto fica suspenso e a corda reenrola (desfecho REWOUND)."
+description_en: "Short rope (35 m): cannot reach the ground; the object stays suspended and the rope rewinds."
+name: short_rope
+rope: {length_m: 35.0}
+solver: {max_time_s: 40.0}

@@ -1,0 +1,107 @@
+# Configuração padrão (cenário demonstrativo). Unidades SI.
+# Todos os números físicos padrão estão aqui; o código só define faixas e regras.
+# Resultados são qualitativos/exploratórios: NÃO são validação de segurança humana.
+name: default
+
+tower:
+  height_m: 50.0          # H
+  diameter_m: 5.0         # D
+  wall_friction: 0.5      # atrito objeto-parede (coef. de Coulomb)
+
+rope:
+  model: wrap_tether      # único modelo validado (ver NOTES.md); 'chain' e 'cable_plugin' são recusados
+  length_m: auto          # 'auto' = estimativa simplificada (ver README); ou valor em m
+  diameter_m: 0.012
+  linear_density_kg_m: 0.075
+  element_length_m: 0.2   # resolução espacial da quadratura de peso/arrasto do trecho livre
+  bend_E_pa: 5.0e7        # inaplicável ao wrap_tether (mantido para o protótipo cable_plugin)
+  twist_G_pa: 2.0e7       # inaplicável ao wrap_tether
+  axial_EA_N: 5.0e4       # rigidez axial EA (N); null não é suportado
+  axial_damping_ratio: 0.1  # razão de amortecimento axial ζ (crítico = 1)
+  wall_friction: 0.4      # atrito corda-parede (cabrestante na parte enrolada)
+  ground_friction: 0.5    # inaplicável (sem contato corda-solo no modelo)
+  wind_drag_Cd_normal: 1.2
+  wind_drag_Cd_tangent: 0.05
+  winding_pitch_factor: 1.05  # passo da hélice = fator × diâmetro da corda
+  winding_handedness: ccw     # sentido da hélice partindo da âncora, visto de cima
+  anchor_below_top_m: 0.3     # âncora logo abaixo do topo; a hélice sobe a partir dela
+  self_collision: false       # inaplicável ao wrap_tether
+  breaking_load_N: 22000
+  load_warn_fraction: 0.5     # alerta quando tração >= fração × carga de ruptura
+
+object:
+  type: mannequin
+  mass_kg: 80.0
+  height_m: 1.75
+  radius_m: 0.20
+  attach_height_fraction: 0.65
+  start_clearance_m: 0.6  # folga horizontal entre parede e superfície do objeto no início
+  drag_CdA_m2: 0.7
+  geom_friction: 0.8
+
+launch:
+  mode: velocity          # velocity | impulse
+  speed_ms: 4.0           # usado no modo velocity
+  impulse_Ns: null        # usado no modo impulse (N·s); Δv = J/m
+  azimuth_deg: 90.0       # 0 = ao longo do vão livre, para longe da chaminé; + = sentido de desenrolar (90 = tangencial; escolhido por validação, ver NOTES)
+  elevation_deg: 5.0
+  duration_ms: 0          # 0 = instantâneo; >0 = força constante J/Δt no intervalo
+
+air:
+  enabled: true
+  density_kg_m3: 1.225
+
+wind:
+  enabled: true
+  preset: null            # nome em presets (sobrescreve speed_mean_ms) ou null
+  speed_mean_ms: 2.0
+  direction_deg: 0.0      # direção para onde o vento sopra, a partir de +x, anti-horário
+  gust_std_ms: 0.7        # desvio-padrão estacionário das rajadas (Ornstein–Uhlenbeck)
+  correlation_time_s: 4.0
+  shear_exponent: 0.0     # perfil U(z) = U·(z/z_ref)^α; 0 = uniforme
+  reference_height_m: 10.0
+  seed: 42
+  presets: {calm: 0, light: 2, breeze: 5, strong: 10}
+
+ground:
+  preset: null
+  friction_slide: 0.6
+  friction_torsional: 0.02     # resistência à torção (m); ver NOTES (0.005 deixava giro sem dissipação)
+  friction_rolling: 0.02       # resistência ao rolamento (m) de corpo deformável; 1e-4 causava balanço sem fim
+  presets: {dry_asphalt: 0.7, concrete: 0.6, grass: 0.4, wet: 0.3, ice: 0.1}
+  size_m: 600.0
+
+contact:
+  solref: [0.02, 1.5]   # complacência de manequim/saco; dampratio 1.5 elimina rebote numérico (ver NOTES)
+  solimp: [0.9, 0.95, 0.001]
+  cone: elliptic
+  impratio: 1.0
+
+impact:
+  damage_threshold_g: 10.0
+  damage_threshold_N: null
+  filter_window_ms: 3.0
+  warn_fraction: 0.5
+  merge_gap_ms: 20.0          # interrupções menores que isso pertencem ao mesmo evento
+  structure_hit_speed_ms: 1.0 # contato com a torre acima desta velocidade normal = colisão estrutural
+
+solver:
+  timestep_s: 0.00025         # convergência do deslizamento exige <= 0.25 ms (ver NOTES)
+  integrator: implicitfast
+  iterations: 100
+  max_time_s: 120.0
+  rest_speed_ms: 0.05
+  rest_hold_s: 1.0            # tempo contínuo abaixo de rest_speed_ms no solo para declarar repouso
+  rewind_threshold_turns: 0.5 # reenrolamento líquido (voltas) que caracteriza REWOUND
+  stop_on_structure_hit: false
+  output_hz: 200
+
+ui:
+  render_hz: 15
+  playback_factor: 1.0
+  width: 960
+  height: 600
+  jpeg_quality: 80
+  helix_visual_pitch_scale: 12.0  # ampliação SOMENTE visual do passo da hélice (rotulada na cena)
+  rope_visual_radius_m: 0.04      # espessura SOMENTE visual da corda
+  camera: free

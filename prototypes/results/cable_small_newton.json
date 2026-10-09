@@ -1,0 +1,83 @@
+{
+ "args": {
+  "height": 50.0,
+  "diameter": 5.0,
+  "length": 20.0,
+  "free0": 2.2,
+  "rope_d": 0.012,
+  "lin_density": 0.075,
+  "pitch_factor": 1.05,
+  "anchor_below_top": 0.3,
+  "seg": 0.5,
+  "bend_E": 50000000.0,
+  "twist_G": 20000000.0,
+  "joint_damping": 0.01,
+  "armature": 0.0,
+  "mu_wall": 0.4,
+  "mass": 80.0,
+  "obj_r": 0.25,
+  "speed": 8.0,
+  "azimuth": 90.0,
+  "dt": 0.0005,
+  "tsim": 0.05,
+  "out": "prototypes/results",
+  "tag": "small_newton",
+  "cone": "elliptic",
+  "solver": "Newton",
+  "iterations": 100,
+  "max_steps": 0
+ },
+ "meta": {
+  "R": 2.5,
+  "rc": 2.506,
+  "pitch": 0.0126,
+  "turns0": 1.1304700666543246,
+  "wound0": 17.8,
+  "nverts": 41,
+  "z_anchor": 49.7,
+  "v0": [
+   5.459128823140357,
+   5.847898126024271,
+   0.0
+  ],
+  "rho_rope": 663.1455962162306
+ },
+ "status": "ok",
+ "sim_time": 0.05000000000000004,
+ "wall_s": 0.11194046400123625,
+ "cost_per_sim_s": 2.2388092800247232,
+ "nbody": 42,
+ "nv": 123,
+ "max_penetration_m": -0.012184707860959492,
+ "timers": {
+  "mjTIMER_STEP": 0.10822793099999989,
+  "mjTIMER_POS_COLLISION": 0.009027499999999689,
+  "mjTIMER_CONSTRAINT": 0.07933103499999983,
+  "mjTIMER_POS_MAKE": 0.0036286340000000195,
+  "mjTIMER_POS_PROJECT": 7.408000000264092e-06,
+  "mjTIMER_ADVANCE": 0.008110881999999708
+ },
+ "ncon_last": 35,
+ "nefc_last": 108,
+ "solver_niter": 2,
+ "samples": [
+  {
+   "t": 0.0005,
+   "wound_len": 18.5,
+   "n_on": 37,
+   "wound_turns": 1.1304700651638064,
+   "coil_zmin": 49.70000076293945,
+   "coil_zmax": 49.7142448425293,
+   "pen_min": -0.012184707860959492,
+   "T_anchor": 307.09579340585196,
+   "T_obj": 48.26114627551963,
+   "obj": [
+    -0.08084669724621635,
+    3.503712290063837,
+    49.71424392283985
+   ],
+   "obj_rad": 3.5046449178197783,
+   "ncon": 36
+  }
+ ]
+}

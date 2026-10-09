@@ -1,0 +1,5 @@
+description: "Sem ar (sem arrasto nem vento): isola o efeito do arrasto aerodinâmico."
+description_en: "No air (no drag, no wind): isolates the effect of aerodynamic drag."
+name: no_air
+air: {enabled: false}
+wind: {enabled: false}

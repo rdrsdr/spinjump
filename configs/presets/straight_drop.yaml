@@ -1,0 +1,4 @@
+description: "Sem lançamento (v0 = 0): o objeto parte em repouso junto à borda e cai sob gravidade."
+description_en: "No launch (v0 = 0): the object starts at rest next to the rim and falls under gravity."
+name: straight_drop
+launch: {mode: velocity, speed_ms: 0.0, azimuth_deg: 0.0, elevation_deg: 0.0}

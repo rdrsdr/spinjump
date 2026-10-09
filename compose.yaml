@@ -1,0 +1,33 @@
+# Interface: docker compose up --build   →  http://localhost:8000 (porta: SPINJUMP_PORT)
+# CLI:       docker compose run --rm cli run --preset rewind
+# Testes:    docker compose run --rm --entrypoint python cli -m pytest -q
+# Logs rotineiros desabilitados (driver "none"); erros aparecem na interface e nos artefatos.
+name: spinjump
+
+x-common: &common
+  image: spinjump:1.0.0
+  user: "${UID:-1000}:${GID:-1000}"
+  volumes:
+    - ./out:/app/out
+  environment:
+    MUJOCO_GL: ${MUJOCO_GL:-osmesa}
+    PYOPENGL_PLATFORM: ${MUJOCO_GL:-osmesa}
+    LP_NUM_THREADS: "2"
+
+services:
+  ui:
+    <<: *common
+    build: .
+    container_name: spinjump-ui
+    ports:
+      - "${SPINJUMP_PORT:-8000}:8000"
+    restart: unless-stopped
+    logging:
+      driver: "none"
+
+  cli:
+    <<: *common
+    profiles: ["cli"]
+    command: ["--help"]
+    logging:
+      driver: "none"

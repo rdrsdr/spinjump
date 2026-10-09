@@ -1,0 +1,4 @@
+description: "Impulso de 480 N·s (Δv = 6 m/s para 80 kg) aplicado em 200 ms no sentido de desenrolar (azimute 90°)."
+description_en: "480 N·s impulse (Δv = 6 m/s for 80 kg) applied over 200 ms in the unwinding direction (azimuth 90°)."
+name: tangential_impulse
+launch: {mode: impulse, speed_ms: null, impulse_Ns: 480.0, azimuth_deg: 90.0, elevation_deg: 0.0, duration_ms: 200}

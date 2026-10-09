@@ -1,0 +1,4 @@
+description: "Vento forte (10 m/s) com rajadas de 2,5 m/s e perfil vertical (α = 0,14)."
+description_en: "Strong wind (10 m/s) with 2.5 m/s gusts and a vertical profile (α = 0.14)."
+name: strong_wind
+wind: {enabled: true, preset: strong, gust_std_ms: 2.5, shear_exponent: 0.14}

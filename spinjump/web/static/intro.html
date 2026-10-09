@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpinJump — about and safety</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/intro.css">
+</head>
+<body class="intro">
+<main class="doc">
+  <header>
+    <p class="eyebrow">SpinJump</p>
+    <h1>A physics simulation of a rope spiral — not a guide to doing it</h1>
+    <p class="lede">SpinJump simulates what happens when a body tied to a rope wound around a tall chimney leaves
+      the top edge: it falls, swings around the structure as the rope unwinds, spirals down and finally hits and
+      slides on the ground. Everything here happens to a <b>virtual crash-test dummy or sandbag</b> inside a
+      physics engine.</p>
+  </header>
+
+  <aside class="callout" role="note" aria-label="Important">
+    <h2>Before you continue</h2>
+    <ul>
+      <li><b>This is only a simulation.</b> The results come from a simplified computer model and have not been
+        checked against real experiments.</li>
+      <li><b>It is not a recommendation or instructions.</b> Nothing on this site tells you how to practise this,
+        and no parameter set shown here is "safe".</li>
+      <li><b>The real activity can kill or seriously injure.</b> Falls from height, collisions with the structure
+        and high-speed impacts with the ground are all part of what the model shows.</li>
+      <li><b>Do not attempt this</b> — not on your own, not with friends, not "just a small version".</li>
+    </ul>
+  </aside>
+
+  <section>
+    <h2>What is being simulated</h2>
+    <figure class="diagram">
+      <svg viewBox="0 0 520 300" role="img" aria-labelledby="dg-t dg-d">
+        <title id="dg-t">Rope spiral around a chimney</title>
+        <desc id="dg-d">A tall chimney with rope coils near its top; a rope runs from the coils to a dummy that
+          spirals down around the chimney toward the ground.</desc>
+        <line x1="20" y1="276" x2="500" y2="276" class="d-ground"/>
+        <rect x="235" y="40" width="50" height="236" class="d-tower"/>
+        <g class="d-coil">
+          <line x1="233" y1="52" x2="287" y2="48"/><line x1="233" y1="57" x2="287" y2="53"/>
+          <line x1="233" y1="62" x2="287" y2="58"/><line x1="233" y1="67" x2="287" y2="63"/>
+        </g>
+        <path d="M 260 100 C 420 110, 430 170, 260 175 C 110 180, 90 230, 260 236 C 400 240, 420 262, 360 270"
+              class="d-path"/>
+        <line x1="287" y1="60" x2="381" y2="135" class="d-rope"/>
+        <circle cx="384" cy="139" r="7" class="d-body"/>
+        <circle cx="287" cy="60" r="4" class="d-depart"/>
+        <text x="300" y="44" class="d-label">rope coils (unwind)</text>
+        <text x="396" y="134" class="d-label">dummy</text>
+        <text x="300" y="296" class="d-label">ground: impact, tumbling, sliding</text>
+        <text x="30" y="200" class="d-label">spiral descent</text>
+      </svg>
+    </figure>
+    <p>The rope starts wound in a tight helix near the top of the chimney (50 m tall, 5 m wide by default). The
+      dummy is launched from the edge. As it swings around the chimney the rope peels off the coils, so the free
+      part gets longer and the dummy descends in a widening spiral. The model computes rope tension, slack,
+      wrapping, air drag and wind, contact with the wall and the ground, and reports impacts, how far the dummy
+      slid, and where it came to rest. You can change heights, rope, launch, wind and ground and watch the result
+      live — each visitor runs their own simulation on the server.</p>
+  </section>
+
+  <section class="two">
+    <div>
+      <h2>What this is</h2>
+      <ul>
+        <li>A physics toy and engineering curiosity built on the MuJoCo physics engine.</li>
+        <li>A way to explore <i>why</i> the spiral happens and how parameters change it.</li>
+        <li>Qualitative and exploratory: trends, not precise numbers.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What this is not</h2>
+      <ul>
+        <li>Not a sport tutorial, training material, or endorsement.</li>
+        <li>Not an engineering, rigging or safety assessment.</li>
+        <li>Not a prediction of what would happen to a person.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Real-world dangers</h2>
+    <ul class="risks">
+      <li><b>Falling from height.</b> A free fall from 50 m reaches about 31 m/s (≈ 113 km/h) at the ground. Any
+        failure of the rope, its anchor, a knot or a harness leads to exactly that.</li>
+      <li><b>High-speed ground impact even when "everything works".</b> In the model's default run the dummy still
+        reaches the ground at about 9 m/s (≈ 33 km/h), mostly sideways, then tumbles and slides for more than
+        ten metres.</li>
+      <li><b>Hitting the structure.</b> Many launch settings swing the body into the chimney wall.</li>
+      <li><b>Rope, anchor and attachment loads.</b> Swinging and jerks multiply forces far beyond body weight;
+        friction can cut or melt rope.</li>
+      <li><b>Entanglement and strangulation</b> by a rope moving at speed, and <b>suspension trauma</b> if left
+        hanging.</li>
+      <li><b>Wind and gusts</b> change the path unpredictably.</li>
+      <li><b>The structure itself.</b> Chimneys and towers can be unstable or crumbling, may vent hot or toxic
+        gases, and are usually private, restricted property. Climbing them is dangerous and often illegal.</li>
+      <li><b>Rescue is hard.</b> Injuries at height or on an isolated structure delay help.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Why the numbers are not safety numbers</h2>
+    <ul>
+      <li>The dummy is a single rigid body; real bodies, tissue and injuries are not modelled.</li>
+      <li>The rope model is simplified: for example, it assumes the coils never slide down the chimney, and an
+        energy loss at the point where the rope leaves the coils strongly slows the descent. A real rope could
+        behave very differently.</li>
+      <li>Impact peaks (shown in g) depend on numerical contact settings. The OK / WARNING / DAMAGE labels compare
+        them with an <b>illustrative</b> threshold — they are not injury criteria.</li>
+      <li>The model has not been validated against real tests of this activity.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Never attempt this</h2>
+    <p>Do not try this or any variation of it. Do not climb chimneys, towers or other structures to test it. Work at
+      height is done only by trained, certified professionals with engineered anchors, inspected equipment, permits
+      and a rescue plan — and this simulator is no substitute for any of that. If you see someone about to attempt
+      a dangerous climb or jump, contact local emergency services. If you or someone you know is in crisis, reach
+      out to local emergency services or a crisis line.</p>
+  </section>
+
+  <section>
+    <h2>How the simulator works here</h2>
+    <ul>
+      <li>Physics and 3D rendering run on the server; your browser only shows the frames and numbers.</li>
+      <li>Each visitor gets their own simulation. The server runs a limited number at once; if it is full, wait a
+        moment and try again.</li>
+      <li>Reports are temporary and anyone with the link can open them. Do not type personal information into the
+        simulation name or parameters.</li>
+      <li>Playback runs in real time by default; if the server is busy the screen shows the actual rate.</li>
+    </ul>
+  </section>
+
+  <form class="ack" id="ack-form">
+    <label><input type="checkbox" id="ack"> I understand that SpinJump is only a simulation, that it is not a
+      recommendation or instructions, that the real activity involves serious risk of injury or death, and that I
+      will not attempt it.</label>
+    <button type="submit" id="enter" class="primary" disabled>Open the simulator</button>
+  </form>
+
+  <footer class="foot">Built with the MuJoCo physics engine. Results are qualitative and exploratory.</footer>
+</main>
+<script>
+  "use strict";
+  const box = document.getElementById("ack"), btn = document.getElementById("enter");
+  box.addEventListener("change", () => { btn.disabled = !box.checked; });
+  document.getElementById("ack-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!box.checked) return;
+    try { sessionStorage.setItem("spinjump_ack", "1"); } catch (err) { /* sem armazenamento: o gate do app redireciona de volta */ }
+    location.href = "/app?ack=1";
+  });
+</script>
+</body>
+</html>
