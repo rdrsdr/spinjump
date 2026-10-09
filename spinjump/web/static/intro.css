@@ -26,4 +26,5 @@ body.intro { background: var(--page); }
 .ack input { margin-top: 5px; flex: none; width: auto; }
 .ack button { margin-top: 14px; padding: 8px 16px; font-size: 15px; }
 .foot { margin-top: 28px; color: var(--muted); font-size: 13px; }
+.doc a { color: var(--accent); }
 @media (max-width: 620px) { .two { grid-template-columns: 1fr; } .doc h1 { font-size: 22px; } }

@@ -34,4 +34,6 @@ When it ends you get a summary and a link to the report.
 - The Space sleeps when unused; the first visit after that may take a few minutes.
 - Reports are temporary (only the most recent runs are kept) and anyone with the link can open them.
 
+Source code: [github.com/rdrsdr/spinjump](https://github.com/rdrsdr/spinjump).
+
 Technical documentation (in Portuguese): [DOCUMENTACAO.md](DOCUMENTACAO.md) and [NOTES.md](NOTES.md).
