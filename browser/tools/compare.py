@@ -23,7 +23,7 @@ FIELDS = ["t", "x", "y", "z", "vx", "vy", "vz", "speed", "theta_turns", "wall_di
 
 
 def main(name: str, js_csv: str):
-    scen = json.loads((ROOT / "browser/public/scenarios" / f"{name}.json").read_text())
+    scen = json.loads((ROOT / "browser/reference" / f"{name}.json").read_text())
     cfg = load_config(preset=scen["preset"], sets=scen["overrides"])
     sim = Simulation(cfg)
     sim.run()

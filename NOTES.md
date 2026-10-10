@@ -285,3 +285,12 @@ deslizantes 1,2 mm em voo com as mesmas métricas. Desempenho: Node 15,8/55,6 µ
 (travadas/deslizantes), Chromium headless só física 32/128 µs. A limitação de CPU por CDP não atinge
 Web Workers. Detalhes e números em `browser/README.md`; código da versão servidor preservado na tag
 `v2-python-server`.
+
+Segunda rodada (mesmo dia), após o retorno do usuário (pouco suave, 100% de CPU, sem parâmetros,
+sem relatório, sem página de aviso): o worker girava em vazio com `setTimeout(0)` quando adiantado;
+agora dorme até o relógio alcançar e usa `MessageChannel` para seguir sem a espera mínima de 4 ms em
+velocidade máxima. A página interpola posição/rotação (slerp) entre quadros e só redesenha quando algo
+muda. Configuração, validação (faixas exportadas do Pydantic), presets e geração do MJCF foram
+portados (`src/config.js`, `model.js`, `scenario.js`): 18 cenários idênticos ao Python, MJCF caractere
+por caractere. O YAML 1.1 lê `5.0e7` como texto; o Pydantic converte, e `coerce()` faz o mesmo em JS.
+Relatório gerado no navegador (`src/report.js`) e página de aviso obrigatória antes do simulador.

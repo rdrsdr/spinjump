@@ -262,8 +262,8 @@ Hugging Face profile (2 vCPUs): 1 session runs at 1.0× real time, 2 sessions at
   Dockerfile: `PORT=7860 LP_NUM_THREADS=1 SPINJUMP_KEEP_RUNS=30 SPINJUMP_MAX_SESSIONS=2
   SPINJUMP_MAX_SIM_TIME_S=180` (and drops `VOLUME`). Reports there are ephemeral.
 - **Oracle Cloud Always Free** (ARM VM) is the free always-on alternative; not set up.
-- **Static, in-browser version** (GitHub Pages, MuJoCo WebAssembly): being prototyped on branch
-  `feature/browser-prototype` (see `browser/`).
+- **Static, in-browser version** (GitHub Pages, MuJoCo WebAssembly): https://rdrsdr.github.io/spinjump/
+  (see §12 and `browser/`).
 
 ## 9. Conventions and gotchas
 
@@ -302,6 +302,9 @@ Hugging Face profile (2 vCPUs): 1 session runs at 1.0× real time, 2 sessions at
 9. Hugging Face Docker Spaces became paid → evaluate running 100% in the browser: version the
    server app (tag `v2-python-server`) and build a prototype on branch `feature/browser-prototype`
    (see §12).
+10. Browser prototype feedback ("not as smooth as the Python version, uses 100% CPU, no parameters,
+    no report, no safety page") → worker no longer busy-waits, frames are interpolated, and the
+    config/MJCF generation, parameter form, report and intro/safety page were ported to JS.
 
 ## 11. Known limitations and possible next steps
 
@@ -319,13 +322,23 @@ Possible next steps (none requested yet):
 ## 12. Browser prototype (`browser/`, branch `feature/browser-prototype`)
 
 Goal: run SpinJump entirely in the visitor's browser as static files (GitHub Pages), using the
-official MuJoCo WebAssembly build (`@mujoco/mujoco` 3.15.0) plus the rope model, wind, drag and
-impacts ported to JavaScript (`browser/public/src/`). Scenarios (resolved config + MJCF) are still
-exported by Python (`browser/tools/export_scenarios.py`). Details in `browser/README.md`.
+official MuJoCo WebAssembly build (`@mujoco/mujoco` 3.15.0). Everything is in JavaScript
+(`browser/public/`): intro/safety page (`index.html`, required before `sim.html`), config validation
+and resolution (`src/config.js`, fed by `public/config.json`, generated from `configs/*.yaml` and the
+Pydantic ranges by `browser/tools/export_config.py`), MJCF generation (`src/model.js`,
+`src/scenario.js`), rope models, wind, drag, impacts, the parameter form (same fields as the server
+UI plus a free `path=value` box and a shareable link), and the report (`src/report.js`: HTML with
+SVG plots plus CSV/JSON, generated on the device). Details in `browser/README.md`.
 
-- Agreement with Python (deterministic wind): locked coils identical (8e-9 m); sliding coils within
-  1.2 mm during flight with the same metrics; rewind case hits the tower in both.
-- Speed: Node 15.8 µs/step (locked) and 55.6 µs/step (sliding) vs Python 53/117; headless Chromium
-  physics-only 32/128 µs/step (0.13/0.51 CPU s per simulated s). Real-phone measurement pending.
-- Not done yet: parameter form, config/MJCF generation in JS, intro/safety page, reports, GitHub
-  Pages deploy.
+- Scenario build identical to Python for 18 reference cases (MJCF byte for byte;
+  `npm run check` against `browser/reference/`, exported by `browser/tools/export_scenarios.py`).
+- Dynamics vs Python (deterministic wind): locked coils identical; sliding coils within 1.2 mm in
+  flight with the same metrics; rewind case hits the tower in both.
+- Speed: Node 16–18 µs/step (locked) and 56 µs/step (sliding) vs Python 53/117. In real time the
+  worker only uses what physics needs (headless Chromium with software 3D: locked 22% of a core,
+  sliding ~73%; main thread ~7%). Real-phone measurement pending.
+- Not ported: MuJoCo offscreen rendering, GIF/video, sweeps, convergence test.
+- Deployed to GitHub Pages at https://rdrsdr.github.io/spinjump/ by `.github/workflows/pages.yml`
+  on every push to `main` that touches `browser/` (installs npm deps, copies them to
+  `public/vendor`, runs `npm run check` and a short physics run, then publishes `browser/public`).
+- Wind gusts use a JS RNG, so gust sequences differ from NumPy's for the same seed.

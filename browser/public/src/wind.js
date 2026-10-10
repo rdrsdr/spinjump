@@ -1,6 +1,7 @@
 // Porte de spinjump/wind.py: vento médio (perfil vertical opcional) + rajadas Ornstein–Uhlenbeck.
-// O gerador aleatório é próprio (sementes iguais não reproduzem a sequência do NumPy); o estado
-// inicial da rajada vem do cenário exportado, então o primeiro valor coincide com o Python.
+// O gerador aleatório é próprio (sementes iguais não reproduzem a sequência do NumPy). O estado
+// inicial da rajada é sorteado da distribuição estacionária, ou vem do cenário exportado pelo Python
+// (campo g0, usado nas comparações).
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -26,7 +27,9 @@ export class Wind {
     this.b = this.sigma * Math.sqrt(Math.max(0, 1 - this.a * this.a));
     this.rand = mulberry32(w.seed);
     this.spare = null;
-    this.g = this.enabled ? [w.g0[0], w.g0[1]] : [0, 0];
+    if (!this.enabled) this.g = [0, 0];
+    else if (w.g0) this.g = [w.g0[0], w.g0[1]];
+    else this.g = [this.sigma * this.normal(), this.sigma * this.normal()];
   }
 
   normal() {

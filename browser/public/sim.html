@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpinJump simulator</title>
+<script>
+  // o simulador só abre depois do aviso da página inicial (index.html)
+  (function () {
+    var viaUrl = new URLSearchParams(location.search).get("ack") === "1";
+    var stored = false;
+    try { stored = sessionStorage.getItem("spinjump_ack") === "1"; if (viaUrl) sessionStorage.setItem("spinjump_ack", "1"); } catch (e) { /* sem armazenamento */ }
+    if (!stored && !viaUrl) location.replace("./");
+  })();
+</script>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+  { "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">SpinJump <span class="tag">browser prototype</span></div>
+  <p class="notice" role="note"><b>Only a simulation.</b> Qualitative and exploratory results from a simplified
+    model — not a safety validation, not instructions. The real activity can kill or seriously injure; never attempt
+    it. <a href="./">About &amp; safety</a></p>
+</header>
+<main class="layout">
+  <aside class="panel params" aria-label="Parameters">
+    <div class="controls">
+      <div class="row">
+        <button id="start" class="primary" disabled>Start</button>
+        <button id="pause" disabled>Pause</button>
+        <button id="stop" disabled>Stop</button>
+        <label class="speed">Speed <select id="speed">
+          <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option>
+          <option value="2">2×</option><option value="4">4×</option><option value="0">max</option></select></label>
+      </div>
+      <label class="field">Preset <select id="preset"><option value="">(default)</option></select></label>
+      <p class="desc" id="preset-desc"></p>
+      <div id="errors" class="errors" role="alert" hidden></div>
+      <div id="warnings" class="warnings" hidden></div>
+    </div>
+    <form id="form" autocomplete="off"></form>
+    <details class="adv">
+      <summary>Advanced: any parameter</summary>
+      <p class="desc">One per line, <code>path=value</code>, applied after the form (same as <code>--set</code> in the
+        command line). Example: <code>solver.timestep_s=0.0002</code>. Every parameter is listed in
+        <a href="https://github.com/rdrsdr/spinjump/blob/main/configs/default.yaml" target="_blank" rel="noopener">configs/default.yaml</a>.</p>
+      <textarea id="sets" rows="4" spellcheck="false" placeholder="rope.coil_mass_scale=50"></textarea>
+    </details>
+    <div class="row">
+      <button id="reset" type="button">Reset to preset</button>
+      <button id="share" type="button">Copy link</button>
+      <span id="share-msg" class="muted"></span>
+    </div>
+  </aside>
+  <section class="stage">
+    <canvas id="view" aria-label="3D view of the simulation"></canvas>
+    <div class="loading" id="loading">Loading physics engine…</div>
+    <div class="cam-bar">
+      <label class="check"><input type="checkbox" id="follow" checked> Follow</label>
+      <button id="cam-reset" type="button" title="reset camera">Reset view</button>
+      <span class="clock" id="clock"></span>
+    </div>
+  </section>
+  <aside class="panel tele-panel" aria-label="Telemetry">
+    <div class="box">
+      <h2>Telemetry</h2>
+      <dl class="tele" id="tele"></dl>
+      <div class="spark"><span>distance to floor (m)</span><canvas id="sp-height" width="280" height="44"></canvas></div>
+      <div class="spark"><span>rope tension (N)</span><canvas id="sp-tension" width="280" height="44"></canvas></div>
+    </div>
+    <div class="box">
+      <h2>Performance <span class="muted">(your device)</span></h2>
+      <dl class="tele" id="perf"></dl>
+    </div>
+    <div class="box">
+      <h2>Impacts <span id="ev-count" class="muted"></span></h2>
+      <ol class="events" id="events"></ol>
+      <p class="desc">OK / WARNING / DAMAGE compare peak deceleration with an <b>illustrative</b> threshold; they are
+        not injury predictions.</p>
+    </div>
+    <div class="box result" id="result" hidden></div>
+  </aside>
+</main>
+<footer class="foot">Physics: MuJoCo (WebAssembly) running in your browser; rope model ported from the Python
+  version. Source: <a href="https://github.com/rdrsdr/spinjump" target="_blank" rel="noopener">github.com/rdrsdr/spinjump</a></footer>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

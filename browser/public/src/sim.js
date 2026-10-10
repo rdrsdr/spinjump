@@ -6,7 +6,7 @@ import { Wind } from './wind.js';
 import { ImpactTracker, G } from './impacts.js';
 
 export const SAMPLE_FIELDS = ['t', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'speed', 'theta_turns', 'wall_dist',
-  'wound_turns', 'free_len', 'tension', 'coil_drop', 'e_total', 'phase'];
+  'wound_turns', 'free_len', 'tension', 'coil_drop', 'e_total', 'phase', 'floor', 'tension_anchor'];
 
 export class Simulation {
   constructor(mj, scen) {
@@ -170,7 +170,7 @@ export class Simulation {
     const gOn = this.impacts.inContact('ground'), tOn = this.impacts.inContact('tower');
     if (rs.tension > tr.tMax) { tr.tMax = rs.tension; tr.tMaxTime = t; }
     if (rs.tension >= sc.rope.breaking_load) tr.loadBreak = true;
-    if (rs.tension >= 0.5 * sc.rope.breaking_load) tr.loadWarn = true;
+    if (rs.tension >= (sc.load_warn_fraction ?? 0.5) * sc.rope.breaking_load) tr.loadWarn = true;
     if (rs.slack) tr.slackTime += dt;
     const wt = this.rope.woundTurns;
     tr.woundMin = Math.min(tr.woundMin, wt);
@@ -211,7 +211,8 @@ export class Simulation {
     if (wd < tr.wallDistMin) { tr.wallDistMin = wd; tr.wallDistMinT = d.time; }
     this.samples.push([d.time, com[0], com[1], com[2], v[0], v[1], v[2], Math.hypot(v[0], v[1], v[2]),
       this.objectTurns(), wd, this.rope.woundTurns, rs.l_free, rs.tension, rs.coil_drop,
-      d.energy[0] + d.energy[1] + rs.elastic_energy + rs.chain_energy, this.phase]);
+      d.energy[0] + d.energy[1] + rs.elastic_energy + rs.chain_energy, this.phase,
+      Math.max(this.lowestPoint(), 0), rs.tension_anchor]);
   }
 
   /** Executa passos até o tempo simulado alvo ou o limite de passos; devolve o nº executado. */
@@ -252,6 +253,16 @@ export class Simulation {
       strongest_impact: strongest && { surface: strongest.surface, t: strongest.t_start, g: strongest.decel_peak_g,
                                        class: strongest.classification },
       energy0: this.energy0,
+      slack_time_s: tr.slackTime, first_tower_t: tr.firstTowerT, first_tower_vn: tr.firstTowerVn,
+      load_warning: tr.loadWarn, load_break: tr.loadBreak, wall_dist_min_t: tr.wallDistMinT,
+      wound_turns_initial: this.samples.length ? this.samples[0][10] : null,
+      energy: (() => {
+        const e1 = this.energy();
+        const diss = tr.wDrag - tr.wDamp - tr.wPeel - tr.wFric;
+        return { initial_J: this.energy0, final_J: e1, drag_object_work_J: tr.wDrag, rope_axial_damping_J: -tr.wDamp,
+                 rope_peel_kink_J: -tr.wPeel, coil_wall_friction_J: -tr.wFric,
+                 contact_and_residual_J: e1 - this.energy0 - diss };
+      })(),
     };
   }
 
